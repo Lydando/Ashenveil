@@ -27,7 +27,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),rand=(a,b)=>a+Math.random()*(b-a)
 function resize(){
   cssW=innerWidth;cssH=innerHeight;
   const coarse=matchMedia('(pointer:coarse)').matches||('ontouchstart'in window);
-  actorScale=coarse?3:1;
+  actorScale=coarse?1.5:1;
   DPR=Math.min(devicePixelRatio||1,coarse?2.15:2.75);
   S=cssH/720;VW=cssW/S;VH=cssH/S;
   canvas.width=Math.max(1,Math.floor(cssW*DPR));canvas.height=Math.max(1,Math.floor(cssH*DPR));
@@ -81,10 +81,24 @@ addEventListener('keydown',e=>{
 addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false});
 function sound(freq,duration=.08,type='triangle',volume=.04){
   if(muted)return;
-  try{if(!audio)audio=new(window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();
-    const osc=audio.createOscillator(),gain=audio.createGain(),now=audio.currentTime;
-    osc.type=type;osc.frequency.setValueAtTime(freq,now);gain.gain.setValueAtTime(volume,now);
-    gain.gain.exponentialRampToValueAtTime(.001,now+duration);osc.connect(gain);gain.connect(audio.destination);osc.start(now);osc.stop(now+duration);
+  try{
+    if(!audio)audio=new(window.AudioContext||window.webkitAudioContext)();
+    if(audio.state==='suspended')audio.resume();
+    const now=audio.currentTime,osc=audio.createOscillator(),gain=audio.createGain();
+    osc.type=type;osc.frequency.setValueAtTime(freq,now);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(38,freq*(type==='sawtooth'?.48:1.32)),now+duration);
+    gain.gain.setValueAtTime(.001,now);gain.gain.linearRampToValueAtTime(volume,now+.006);
+    gain.gain.exponentialRampToValueAtTime(.001,now+duration);
+    osc.connect(gain);gain.connect(audio.destination);osc.start(now);osc.stop(now+duration+.01);
+    if(duration>.045){
+      const sub=audio.createOscillator(),sg=audio.createGain(),filter=audio.createBiquadFilter();
+      sub.type='sine';sub.frequency.setValueAtTime(Math.max(42,freq*.5),now);
+      sub.frequency.exponentialRampToValueAtTime(Math.max(36,freq*.32),now+duration*.8);
+      filter.type='lowpass';filter.frequency.value=420;
+      sg.gain.setValueAtTime(.001,now);sg.gain.linearRampToValueAtTime(volume*.42,now+.008);
+      sg.gain.exponentialRampToValueAtTime(.001,now+duration*.85);
+      sub.connect(filter);filter.connect(sg);sg.connect(audio.destination);sub.start(now);sub.stop(now+duration);
+    }
   }catch{}
 }
 function startRun(){
@@ -181,7 +195,7 @@ function inputPlayer(dt){
     else if(!player.attack)beginAttack();
   }
   if(inp.jump&&!jumpWas&&player.grounded&&player.jumpCooldown<=0){
-    player.vy=-625;player.grounded=false;player.jumpCooldown=.16;burst(player.x,player.y+player.h/2,7,'#c8b89e',120);sound(240,.07,'triangle',.02);
+    player.vy=-625*Math.sqrt(actorScale);player.grounded=false;player.jumpCooldown=.16;burst(player.x,player.y+player.h/2,7,'#c8b89e',120);sound(240,.07,'triangle',.02);
   }
   if(inp.parry&&!parryWas&&player.parryCooldown<=0){
     player.parry=.22;player.parryCooldown=.43;sound(520,.045,'sine',.02);
@@ -354,7 +368,7 @@ function drawEnemy(e){
   }
 }
 function drawPlayer(){
-  const p=player,f=p.facing,hop=p.grounded?0:clamp((bounds().f-p.h/2-p.y)/120,0,1);
+  const p=player,f=p.facing,hop=p.grounded?0:clamp((bounds().f-p.h/2-p.y)/(120*actorScale),0,1);
   const flick=p.invuln>0&&Math.floor(elapsed*24)%2===0;
   ctx.save();ctx.translate(p.x,bounds().f-4);ctx.scale(actorScale,actorScale);
   ctx.globalAlpha=1-hop*.58;ctx.fillStyle='rgba(0,0,0,.52)';ctx.beginPath();ctx.ellipse(0,0,23-hop*7,7-hop*2,0,0,TAU);ctx.fill();ctx.restore();
@@ -384,7 +398,7 @@ function drawPlayer(){
   ctx.restore();
   if(p.parry>0){
     const q=1-p.parry/.22;ctx.strokeStyle='rgba(230,184,132,'+(1-q*.55)+')';ctx.lineWidth=2.5;glow('#c27b54',8);
-    ctx.beginPath();ctx.arc(p.x+f*17*actorScale,p.y-4*actorScale,(18+q*12)*actorScale,-1.05,1.05);ctx.stroke();noGlow();
+    ctx.beginPath();ctx.arc(p.x+f*17*actorScale,p.y-4*actorScale,(18+q*12)*actorScale,f>0?-1.05:Math.PI-1.05,f>0?1.05:Math.PI+1.05);ctx.stroke();noGlow();
   }
   if(p.attack){
     const m=combos[p.attack.stage];
