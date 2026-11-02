@@ -20,7 +20,7 @@ canvas{display:block;width:100%;height:100%;outline:0;touch-action:none}
 </head>
 <body>
 <canvas id="game" aria-label="Glitch game"></canvas>
-<div id="hint">A / D or ← / → · Space jump · Shift dash · W/S on wires · R restart</div>
+<div id="hint">A / D or ← / → move · Space jump · Shift dash · R restart</div>
 <div id="rotate"><div><strong>Rotate your device</strong>Glitched is designed for landscape play.</div></div>
 
 <script src="./tower-backdrop.js"></script>
@@ -60,12 +60,12 @@ try{
 }catch{}
 
 let keys={};
-let touch={left:false,right:false,jump:false,dash:false,up:false,down:false};
+let touch={left:false,right:false,jump:false,dash:false};
 
 addEventListener('keydown',e=>{
   keys[e.key.toLowerCase()]=true;
 
-  if([' ','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){
+  if([' ','ArrowUp','ArrowLeft','ArrowRight'].includes(e.key)){
     e.preventDefault();
   }
 
@@ -92,8 +92,6 @@ function updateTouch(){
   touch.right=false;
   touch.jump=false;
   touch.dash=false;
-  touch.up=false;
-  touch.down=false;
 
   joystick.active=false;
   joystick.knobX=joystick.x;
@@ -104,19 +102,16 @@ function updateTouch(){
 
     if(p.control==='stick'||(!p.control&&pos.x<250)){
       const dx=pos.x-p.startGX;
-      const dy=pos.y-p.startGY;
-      const dist=Math.hypot(dx,dy);
+      const dist=Math.abs(dx);
       const max=joystick.r*.78;
       const k=dist>max?max/dist:1;
 
       joystick.active=true;
       joystick.knobX=joystick.x+dx*k;
-      joystick.knobY=joystick.y+dy*k;
+      joystick.knobY=joystick.y;
 
       if(dx<-12)touch.left=true;
       if(dx>12)touch.right=true;
-      if(dy<-14)touch.up=true;
-      if(dy>14)touch.down=true;
     }else if(p.control==='jump'){
       touch.jump=true;
     }else if(p.control==='dash'){
@@ -140,7 +135,6 @@ canvas.addEventListener('pointerdown',e=>{
     x:e.clientX,
     y:e.clientY,
     startGX:pos.x,
-    startGY:pos.y,
     control:c?c.id:(pos.x<250?'stick':null)
   };
 
@@ -172,7 +166,7 @@ canvas.addEventListener('pointerup',endPointer);
 canvas.addEventListener('pointercancel',endPointer);
 canvas.addEventListener('lostpointercapture',endPointer);
 
-let platforms=[],wires=[],particles=[],arenaSections=[];
+let platforms=[],conduits=[],particles=[],arenaSections=[];
 let cameraY=0,wallY=0,wallSpeed=18;
 let elapsed=0,runHeight=0,score=0;
 let gameState='ready',last=0,shake=0;
@@ -214,7 +208,6 @@ function makePlayer(){
     x:world.width/2,y:0,vx:0,vy:0,w:28,h:40,
     onGround:false,wallSide:0,wallJumpLock:0,
     dashReady:true,dashTime:0,dashDir:1,
-    climbing:false,wire:null,climbCooldown:0,
     trail:[],jumpBuffer:0,coyote:0,face:1,
     jumpAnim:0,wallPushAnim:0,dashVisual:0,landAnim:0
   };
@@ -227,8 +220,8 @@ function addPlatform(x,y,w,type='solid',mainRoute=false){
   return p;
 }
 
-function addWire(x,y1,y2,kind='cable'){
-  wires.push({x,y1,y2,kind});
+function addConduit(x,y1,y2,kind='cable'){
+  conduits.push({x,y1,y2,kind});
 }
 
 function platformZone(x,w){
@@ -282,17 +275,8 @@ function reachablePlatformX(previous,pw,step=0,zoneHint=null,y=0){
 }
 
 function addOptionalBranch(main,step){
-  // Every optional spawn is weighted: 30% climbing vine, 70% extra ledge.
-  // These are bonuses/alternatives; the guaranteed main-route ledges remain
-  // available so a vine roll can never make upward progress impossible.
+  // Optional side ledges add route choices beside the guaranteed main path.
   if(Math.random()>.40)return;
-  if(Math.random()<.50){
-    const bounds=arenaBoundsAt(main.y);
-    const wx=clamp(main.x+rand(-35,main.w+35),bounds.left+18,bounds.right-18);
-    const y1=main.y-rand(18,42);
-    addWire(wx,y1,y1+rand(70,125),'chain');
-    return;
-  }
   const bw=rand(68,104), bounds=arenaBoundsAt(main.y), edge=bounds.left+10;
   const maxX=Math.max(edge,bounds.right-bw-10);
   for(let attempt=0;attempt<60;attempt++){
@@ -347,7 +331,7 @@ function makeReachablePlatform(source,y,pw,usedZones,step){
 
 function generateInitial(){
   platforms=[];
-  wires=[];
+  conduits=[];
   arenaSections=[{left:0,right:0}];
   routeFrontier=[];
   lastSpawnedLedge=null;
@@ -384,7 +368,7 @@ function generateInitial(){
     const wy=120+(topY-120)*t+rand(-30,30);
     const bounds=arenaBoundsAt(wy);
     const wx=rand(bounds.left+24,Math.max(bounds.left+25,bounds.right-24));
-    addWire(wx,wy,wy+rand(75,130),'chain');
+    addConduit(wx,wy,wy+rand(75,130),'chain');
   }
 }
 
@@ -413,7 +397,7 @@ function generateNextSection(){
   routePlatform=nextLayer[Math.floor(Math.random()*nextLayer.length)];
   if(Math.random()<.05){
     const wx=rand(45,Math.max(46,world.width-45));
-    addWire(wx,baseY-rand(20,42),baseY+rand(45,85));
+    addConduit(wx,baseY-rand(20,42),baseY+rand(45,85));
   }
 }
 
@@ -466,8 +450,6 @@ function input(){
     left:keys.a||keys.arrowleft||touch.left,
     right:keys.d||keys.arrowright||touch.right,
     jump:keys[' ']||keys.w||keys.arrowup||touch.jump,
-    up:keys.w||keys.arrowup||touch.up,
-    down:keys.s||keys.arrowdown||touch.down,
     dash:keys.shift||keys.x||touch.dash
   };
 }
@@ -498,76 +480,7 @@ function step(dt){
 
   if(dir)player.face=dir;
 
-  // Find nearby wires and allow vertical climbing.
-  player.climbCooldown=Math.max(0,player.climbCooldown-dt);
-
-  if(!player.climbing){
-    let near=null;
-    let dist=Infinity;
-
-    for(const w of wires){
-      const d=Math.abs(player.x+player.w/2-w.x);
-
-      if(
-        d<18&&
-        player.y+player.h>w.y1&&
-        player.y<w.y2&&
-        d<dist
-      ){
-        near=w;
-        dist=d;
-      }
-    }
-
-    if(near&&(inp.up||inp.down)&&player.climbCooldown===0){
-      player.climbing=true;
-      player.wire=near;
-      player.vx=0;
-      player.vy=0;
-    }
-  }
-
-  if(player.climbing){
-    if(
-      !player.wire||
-      player.y+player.h<player.wire.y1-2||
-      player.y>player.wire.y2+4
-    ){
-      player.climbing=false;
-      player.wire=null;
-      player.climbCooldown=.18;
-    }else{
-      player.x+=
-        (player.wire.x-(player.x+player.w/2))*
-        Math.min(1,dt*16);
-
-      player.vy=0;
-
-      player.y+=(inp.up?-1:inp.down?1:0)*155*dt;
-      // Stop at the endpoints. Reaching the top never auto-detaches the player.
-      player.y=clamp(player.y,player.wire.y1-player.h,player.wire.y2);
-
-      if(player.jumpBuffer>0){
-        player.climbing=false;
-        player.wire=null;
-        player.vy=-410;
-        player.vx=player.face*145;
-        player.dashReady=true;
-        player.wallJumpLock=0;
-        player.jumpBuffer=0;
-
-        burst(
-          player.x+12,
-          player.y+20,
-          7,
-          '#8afaff'
-        );
-      }
-    }
-  }
-
-  if(!player.climbing){
-    if(player.dashTime>0){
+  if(player.dashTime>0){
       player.dashTime=Math.max(0,player.dashTime-dt);
       player.vx=player.dashDir*690;
       player.vy*=.18;
@@ -742,11 +655,10 @@ function step(dt){
       p=>p.y<player.y+H+180&&!p.dead
     );
 
-    wires=wires.filter(
+    conduits=conduits.filter(
       w=>w.y2<player.y+H+200&&
          w.y1>player.y-1500
     );
-  }
 
   runHeight=Math.max(
     runHeight,
@@ -854,7 +766,7 @@ function draw(){
 
   // Legacy city-era effects and gate removed for the new abstract visual direction.
 
-  // World objects: detailed industrial ledges and climbable power conduits.
+  // World objects: detailed ledges and decorative power conduits.
   ctx.save();
   ctx.translate(0,-cam);
 
@@ -907,7 +819,7 @@ function draw(){
   }
   ctx.restore();
 
-  for(const w of wires){
+  for(const w of conduits){
     ctx.save();
     if(w.kind==='chain'){
       // Heavy hanging links, each with a metal rim and cyan specular edge.
@@ -939,7 +851,7 @@ function draw(){
       ctx.fillStyle='rgba(108,184,203,.85)';ctx.fillRect(w.x-5,y-2,2,4);ctx.fillRect(w.x+3,y-2,2,4);
       ctx.fillStyle='#8df8ff';ctx.fillRect(w.x-1,y-1,2,3);
     }
-    // Mounting brackets, cable labels and segmented fiber glow add scale to the climbable conduit.
+    // Mounting brackets, cable labels and segmented fiber glow add scale.
     for(let mount=w.y1+18;mount<w.y2-8;mount+=56){
       ctx.fillStyle='rgba(1,6,14,.92)';ctx.fillRect(w.x-10,mount-4,20,8);
       ctx.fillStyle='rgba(45,92,113,.9)';ctx.fillRect(w.x-9,mount-3,18,6);
@@ -1383,7 +1295,7 @@ function draw(){
 
     ctx.fillText(
       gameState==='ready'
-        ?'Climb. Adapt. Stay ahead.'
+        ?'Ascend. Endure. Escape.'
         :gameState==='over'
           ?'You reached '+Math.floor(runHeight)+
             ' metres in '+formatTime(elapsed)
@@ -1587,14 +1499,14 @@ function drawEntity(x,y,w,h,ghost){
   // Fully procedural, layered hooded runner. Designed around Prototype 2's silhouette,
   // with restrained shard breakup inspired by Prototype 1. No external art assets.
   ctx.save();
-  const t=elapsed, grounded=!ghost&&player.onGround, climbing=!ghost&&player.climbing;
+  const t=elapsed, grounded=!ghost&&player.onGround;
   const dashing=!ghost&&player.dashVisual>0, rising=!ghost&&player.vy<-70, falling=!ghost&&player.vy>90;
   const running=grounded&&Math.abs(player.vx)>18, face=player.face||1;
   const phase=t*(running?15:5), jumpPulse=!ghost?Math.max(0,Math.min(1,player.jumpAnim/.24)):0;
   const landPulse=!ghost?Math.max(0,Math.min(1,player.landAnim/.18)):0;
-  const stride=running?Math.sin(phase):0, climbCycle=climbing?Math.sin(t*9):0;
+  const stride=running?Math.sin(phase):0;
   const alpha=ghost?.22:1, tuck=rising?2.8:falling?-1.2:0;
-  const cloakFlow=running?Math.sin(phase+1.1)*2.2:climbing?climbCycle*1.4:falling?3:rising?-2:Math.sin(t*2.5)*.45;
+  const cloakFlow=running?Math.sin(phase+1.1)*2.2:falling?3:rising?-2:Math.sin(t*2.5)*.45;
   ctx.translate(x+w/2,y+h/2+(running?Math.abs(Math.sin(phase))*0.65:0));
   ctx.scale(face*(dashing?1.15:1)*1.48,1.48);
   ctx.globalAlpha*=alpha;
@@ -1659,8 +1571,8 @@ function drawEntity(x,y,w,h,ghost){
   ctx.restore();
 
   // Leg rig: upper and lower sections are separately articulated around the hip and knee.
-  const leg1=climbing?climbCycle*4.1:stride*6.4;
-  const leg2=climbing?-climbCycle*3.8:-stride*6.4;
+  const leg1=stride*6.4;
+  const leg2=-stride*6.4;
   const airborneSpread=rising?-1.5:falling?2:0;
   const hipY=3, kneeBase=9+airborneSpread, footBase=14+(falling?1.5:rising?-2:0);
   const k1x=-2+leg1*.48, k2x=2+leg2*.48;
@@ -1689,7 +1601,7 @@ function drawEntity(x,y,w,h,ghost){
 
   // Torso rotates subtly with movement; chest narrows to a defined waist.
   ctx.save();
-  const torsoTilt=dashing?-.24:rising?-.16:falling?.13:climbing?-.08:running?Math.sin(phase)*.035:0;
+  const torsoTilt=dashing?-.24:rising?-.16:falling?.13:running?Math.sin(phase)*.035:0;
   ctx.translate(0,-1);ctx.rotate(torsoTilt);
   // Under-suit and segmented chest armour.
   polygon([[-4.5,-10],[2.8,-10.5],[5,-6],[3.8,-1],[2.3,4],[-2.8,4.3],[-5,0]],'#0b1422','#496477',.8);
@@ -1720,8 +1632,8 @@ function drawEntity(x,y,w,h,ghost){
   ctx.restore();
 
   // Arms use shoulder/elbow/wrist joints. The forearm armour catches the cyan rim.
-  const armA=climbing?climbCycle*5:rising?-5.5:falling?3.5:running?-stride*5.2:0;
-  const armB=climbing?-climbCycle*5:rising?-7:falling?5:running?stride*5.2:0;
+  const armA=rising?-5.5:falling?3.5:running?-stride*5.2:0;
+  const armB=rising?-7:falling?5:running?stride*5.2:0;
   const wristYA=dashing?-5:rising?-5:falling?1:running?Math.max(-1,armA*.25):1;
   const wristYB=dashing?-3:rising?-7:falling?2:running?Math.max(-1,armB*.25):1;
   // Back arm and gloved hand.
@@ -1742,7 +1654,7 @@ function drawEntity(x,y,w,h,ghost){
   ctx.fillStyle='#9bfaff';ctx.fillRect(-6.5+armA,-.1+wristYA,.75,.75);
 
   // Hood shell: layered angular fabric, deep shadow and a sharp forward brow.
-  const hy=-15+(rising?-1:falling?.7:0)+(climbing?climbCycle*.35:0);
+  const hy=-15+(rising?-1:falling?.7:0);
   ctx.save();
   // Rear hood fold and outer cowl.
   polygon([[-5.1,hy+2.5],[-5.6,hy-3.7],[-3.8,hy-8.3],[-.5,hy-10.1],[3.3,hy-8.5],[6,hy-4.4],[6.2,hy+1.2],[3.3,hy+4.4],[-1.2,hy+4.8]],'#080e19','#4c657a',.9);
