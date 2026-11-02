@@ -29,6 +29,8 @@ canvas{display:block;width:100%;height:100%;outline:0;touch-action:none}
 
 const canvas=document.getElementById('game');
 const ctx=canvas.getContext('2d');
+const playerRunArt=new Image();
+playerRunArt.src='./assets/player-run.png';
 
 // Player is drawn procedurally as a faceted glitch entity; no external avatar sprite is loaded.
 let W=innerWidth,H=innerHeight,DPR=1;
@@ -1495,7 +1497,7 @@ function drawEntityFallback(x,y,w,h,ghost){
   }
   ctx.restore();
 }
-function drawEntity(x,y,w,h,ghost){
+function drawEntityProcedural(x,y,w,h,ghost){
   // Fully procedural, layered hooded runner. Designed around Prototype 2's silhouette,
   // with restrained shard breakup inspired by Prototype 1. No external art assets.
   ctx.save();
@@ -1690,6 +1692,21 @@ function drawEntity(x,y,w,h,ghost){
     ctx.restore();
   }
   ctx.restore();
+}
+function drawEntity(x,y,w,h,ghost){
+  const running=!ghost&&player.onGround&&Math.abs(player.vx)>18;
+  if(running&&playerRunArt.complete&&playerRunArt.naturalWidth>=672){
+    const frame=Math.floor(elapsed*13)%6;
+    const anchorX=x+w/2,anchorY=y+h-1;
+    ctx.save();
+    ctx.translate(anchorX,anchorY);
+    ctx.scale(player.face||1,1);
+    ctx.imageSmoothingEnabled=true;
+    ctx.drawImage(playerRunArt,frame*112,0,112,112,-44,-74,88,88);
+    ctx.restore();
+    return;
+  }
+  drawEntityProcedural(x,y,w,h,ghost);
 }
 function roundRect(x,y,w,h,r){
   ctx.beginPath();
