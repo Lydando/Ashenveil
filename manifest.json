@@ -1,13 +1,13 @@
 {
-  "name": "Glitched",
-  "short_name": "Glitched",
-  "description": "A glitch-themed vertical survival game.",
+  "name": "Ashenveil",
+  "short_name": "Ashenveil",
+  "description": "A dark 2D arena fighting prototype.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "landscape",
-  "background_color": "#070914",
-  "theme_color": "#070914",
+  "background_color": "#100f12",
+  "theme_color": "#100f12",
   "icons": [
     {
       "src": "./192.png",
