@@ -1,4 +1,4 @@
-const CACHE_NAME = "glitched-v8";
+const CACHE_NAME = "glitched-v9";
 const APP_BASE = "/Glitched/";
 
 const APP_FILES = [

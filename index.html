@@ -220,7 +220,10 @@ function makePlayer(){
 }
 
 function addPlatform(x,y,w,type='solid',mainRoute=false){
-  const p={x,y,w,h:14,type,mainRoute,phase:Math.random()*6.28,crack:0,dead:false};
+  const nearWall=Math.min(x-24,world.width-48-(x+w))<world.width*.2;
+  const roll=Math.random();
+  const style=roll<.24&&nearWall?'wallShelf':roll<.52?'bridge':roll<.75?'gear':'deck';
+  const p={x,y,w,h:16,type,mainRoute,style,phase:Math.random()*6.28,crack:0,dead:false};
   platforms.push(p);
   lastSpawnedLedge=p;
   return p;
@@ -282,12 +285,12 @@ function reachablePlatformX(previous,pw,step=0,zoneHint=null,y=0){
 
 function addOptionalBranch(main,step){
   // Optional side ledges add route choices beside the guaranteed main path.
-  if(Math.random()>.40)return;
-  const bw=rand(68,104), bounds=arenaBoundsAt(main.y), edge=bounds.left+10;
+  if(Math.random()>.22)return;
+  const bw=rand(124,178), bounds=arenaBoundsAt(main.y), edge=bounds.left+10;
   const maxX=Math.max(edge,bounds.right-bw-10);
   for(let attempt=0;attempt<60;attempt++){
     const bx=rand(edge,maxX);
-    const by=main.y+rand(-22,28);
+    const by=main.y+rand(-30,26);
     const sameBandOverlap=platforms.some(p=>!p.dead&&Math.abs(p.y-by)<20&&bx<p.x+p.w+22&&bx+bw>p.x-22);
     if(sameBandOverlap||violatesPreviousSpawnZone(bx,bw,by,main))continue;
     addPlatform(bx,by,bw,Math.random()<.07?'unstable':'solid',false);
@@ -346,16 +349,16 @@ function generateInitial(){
   routePlatform=start;
   routeFrontier=[start];
   let baseY=start.y;
-  // Build overlapping layers. Each layer has 2-3 upward choices; sources are
-  // drawn from the whole previous layer, not a single mandatory spine.
+  // A sparse guaranteed route keeps the climb readable; occasional side shelves
+  // offer alternate landings without filling every screen with platforms.
   for(let layer=0;layer<6;layer++){
-    baseY-=rand(88,102);
+    baseY-=rand(108,124);
     const nextLayer=[];
     const usedZones=new Set();
-    const count=2;
+    const count=1;
     for(let j=0;j<count;j++){
       const source=chooseFrontierSource()||start;
-      const pw=rand(106,148);
+      const pw=rand(158,214);
       const p=makeReachablePlatform(source,baseY+rand(-8,8),pw,usedZones,layer*3+j);
       nextLayer.push(p);
       const zoneW=(world.width-68)/4;
@@ -384,15 +387,15 @@ function generateNextSection(){
   const difficulty=Math.min(1,runHeight/2200);
   const sourceLayer=routeFrontier.filter(p=>p&&!p.dead);
   if(!sourceLayer.length)return;
-  const baseY=Math.min(...sourceLayer.map(p=>p.y))-rand(88,102);
+  const baseY=Math.min(...sourceLayer.map(p=>p.y))-rand(108,124);
   const nextLayer=[];
   const usedZones=new Set();
-  // 2-3 real upward choices per layer. Each is sampled from a reachable
-  // source platform, so the player is not forced onto one generated sequence.
-  const count=2;
+  // One guaranteed rising platform per section keeps a clean silhouette;
+  // side branches appear sparingly as optional risk/reward routes.
+  const count=1;
   for(let i=0;i<count;i++){
     const source=sourceLayer[Math.floor(Math.random()*sourceLayer.length)];
-    const pw=rand(106,148)-difficulty*4;
+    const pw=rand(158,214)-difficulty*8;
     const p=makeReachablePlatform(source,baseY+rand(-8,8),pw,usedZones,Math.floor(runHeight/75)*3+i);
     nextLayer.push(p);
     const zoneW=(world.width-68)/4;
@@ -891,18 +894,45 @@ function draw(){
     if(p.dead)continue;
     const pink=p.type==='unstable';
     const triggered=pink&&p.crack>0;
+    const style=p.style||'deck';
     const flick=triggered&&Math.sin(performance.now()*.04)>0?.45:1;
     ctx.save();ctx.globalAlpha=flick;
-    const accent=pink?'#ff42d5':'#43eaff';
+    const accent=pink?'#c96d83':'#91a8a2';
+    // Structural supports distinguish anchored shelves, suspended spans and gear decks.
+    if(style==='wallShelf'){
+      const leftSide=p.x+p.w/2<world.width/2;
+      const wall=leftSide?24:world.width-24;
+      const near=leftSide?p.x:p.x+p.w;
+      const span=Math.abs(near-wall);
+      ctx.strokeStyle='rgba(104,132,137,.7)';ctx.lineWidth=5;
+      ctx.beginPath();ctx.moveTo(wall,p.y+14);ctx.lineTo(near,p.y+14);ctx.stroke();
+      ctx.strokeStyle='rgba(176,188,174,.48)';ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(wall,p.y+12);ctx.lineTo(near,p.y+12);ctx.lineTo(near,p.y+25);ctx.moveTo(near-span*.28,p.y+14);ctx.lineTo(near,p.y+25);ctx.stroke();
+      ctx.fillStyle='#a9b5a5';ctx.fillRect(wall-2,p.y+8,4,9);
+    }else if(style==='bridge'){
+      ctx.strokeStyle='rgba(113,138,139,.72)';ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(p.x+5,p.y+17);ctx.lineTo(p.x+p.w-5,p.y+17);
+      ctx.moveTo(p.x+8,p.y+17);ctx.lineTo(p.x+p.w*.25,p.y+27);ctx.lineTo(p.x+p.w*.5,p.y+17);
+      ctx.lineTo(p.x+p.w*.75,p.y+27);ctx.lineTo(p.x+p.w-8,p.y+17);ctx.stroke();
+      ctx.fillStyle='rgba(131,160,156,.68)';
+      ctx.fillRect(p.x+p.w*.25,p.y+17,2,10);ctx.fillRect(p.x+p.w*.75,p.y+17,2,10);
+    }else if(style==='gear'){
+      ctx.save();ctx.translate(p.x+p.w*.5,p.y+p.h+14);ctx.rotate(elapsed*.22+p.phase);
+      ctx.strokeStyle='rgba(152,174,163,.7)';ctx.lineWidth=2;
+      ctx.beginPath();ctx.arc(0,0,13,0,Math.PI*2);ctx.arc(0,0,5,0,Math.PI*2);
+      for(let tooth=0;tooth<12;tooth++){const a=tooth*Math.PI/6;ctx.moveTo(Math.cos(a)*13,Math.sin(a)*13);ctx.lineTo(Math.cos(a)*18,Math.sin(a)*18);}
+      ctx.stroke();ctx.restore();
+    }
+
     // Ground shadow and multi-layer metal chassis.
     ctx.fillStyle='rgba(0,0,0,.38)';ctx.fillRect(p.x+3,p.y+7,p.w,p.h+9);
     ctx.fillStyle=pink?'#25132d':'#0b1b2a';ctx.fillRect(p.x,p.y+2,p.w,p.h+5);
     ctx.fillStyle=pink?'#492044':'#17374a';ctx.fillRect(p.x+2,p.y+4,p.w-4,5);
     ctx.fillStyle=pink?'#170f22':'#07111e';ctx.fillRect(p.x+4,p.y+9,p.w-8,7);
     // Top landing strip remains clean and easy to read.
-    ctx.shadowColor=accent;ctx.shadowBlur=triggered?5:9;
-    ctx.fillStyle=accent;ctx.fillRect(p.x,p.y,p.w,3);ctx.shadowBlur=0;
-    ctx.fillStyle=pink?'rgba(255,87,220,.25)':'rgba(91,236,249,.22)';ctx.fillRect(p.x+4,p.y+4,p.w-8,2);
+    ctx.shadowColor=accent;ctx.shadowBlur=triggered?3:4;
+    ctx.fillStyle=accent;ctx.fillRect(p.x+3,p.y,p.w-6,2);ctx.shadowBlur=0;
+    ctx.fillStyle=pink?'rgba(255,125,156,.22)':'rgba(143,194,183,.16)';ctx.fillRect(p.x+4,p.y+4,p.w-8,2);
     // Repeated panel seams, inset plates and rivets.
     for(let xx=p.x+12;xx<p.x+p.w-8;xx+=25){
       ctx.fillStyle=pink?'rgba(255,115,224,.5)':'rgba(107,176,198,.48)';ctx.fillRect(xx,p.y+6,1,7);
@@ -1717,7 +1747,7 @@ function drawEntity(x,y,w,h,ghost){
 
   // The source sheet has six distinct airborne poses, from launch through landing.
   if(!dashing&&player.onGround&&player.landAnim>0&&playerJumpArt.complete&&playerJumpArt.naturalWidth>=672){
-    drawFrame(playerJumpArt,5,112,88,88,74);
+    drawFrame(playerJumpArt,5,112,128,128,107);
     return;
   }
   if(!dashing&&!player.onGround&&playerJumpArt.complete&&playerJumpArt.naturalWidth>=672){
@@ -1727,17 +1757,17 @@ function drawEntity(x,y,w,h,ghost){
     else if(player.vy<-180)frame=3;
     else if(player.vy<0)frame=2;
     else frame=4;
-    drawFrame(playerJumpArt,frame,112,88,88,74);
+    drawFrame(playerJumpArt,frame,112,128,128,107);
     return;
   }
   if(running&&playerRunArt.complete&&playerRunArt.naturalWidth>=672){
     const frame=Math.floor(elapsed*13)%6;
-    drawFrame(playerRunArt,frame,112,88,88,74);
+    drawFrame(playerRunArt,frame,112,128,128,107);
     return;
   }
   if(!dashing&&player.onGround&&playerIdleArt.complete&&playerIdleArt.naturalWidth>=224){
     const frame=Math.floor(elapsed/.78)%2;
-    drawFrame(playerIdleArt,frame,160,60,88,87);
+    drawFrame(playerIdleArt,frame,160,78,114,113);
     return;
   }
   drawEntityProcedural(x,y,w,h,false);
