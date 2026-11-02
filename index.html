@@ -35,7 +35,6 @@ function resize(){
   canvas.width=Math.max(1,Math.floor(cssW*DPR));
   canvas.height=Math.max(1,Math.floor(cssH*DPR));
   ctx.setTransform(DPR*S,0,0,DPR*S,0,0);
-  if(player){player.x=clamp(player.x,92,VW-92);player.y=clamp(player.y,100,VH-110);}
 }
 addEventListener('resize',resize);
 resize();
@@ -43,7 +42,7 @@ resize();
 const keys=Object.create(null);
 const touch={x:0,y:0,attack:false,parry:false,jump:false};
 let pointers=new Map(),controls=[],stick={x:120,y:0,r:55,kx:120,ky:0,active:false};
-let mode='title',elapsed=0,wave=0,bestTime=0,bestWave=0,score=0;
+let mode='title',elapsed=0,wave=0,bestTime=0,bestWave=0,score=0,kills=0;
 let player=null,enemies=[],hazards=[],particles=[],ambient=[];
 let wavePause=-1,waveBanner=0,bannerText='',hazardClock=8,shake=0,hitStop=0;
 let attackWas=false,parryWas=false,jumpWas=false,intermissionStarted=false;
@@ -59,7 +58,7 @@ function inputState(){
     x:clamp(ax,-1,1),y:clamp(ay,-1,1),
     attack:!!(keys.j||keys.z||touch.attack),
     parry:!!(keys.k||keys.x||touch.parry),
-    jump:!!(keys[' ']||keys.w||keys.arrowup||touch.jump)
+    jump:!!(keys[' ']||touch.jump)
   };
 }
 function updateTouch(){
@@ -90,7 +89,8 @@ canvas.addEventListener('pointerup',endPointer);canvas.addEventListener('pointer
 addEventListener('keydown',e=>{
   const k=e.key.toLowerCase();keys[k]=true;
   if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();
-  if((k==='enter'||k===' ')&&mode!=='playing')startRun();
+  if(k==='enter'&&mode!=='playing')startRun();
+  else if(k===' '&&mode!=='playing'){startRun();keys[' ']=false;}
   if(k==='p'){if(mode==='playing')mode='paused';else if(mode==='paused')mode='playing'}
   if(k==='m')muted=!muted;
 });
@@ -108,7 +108,7 @@ function sound(freq,duration=.08,type='triangle',volume=.045){
   }catch{}
 }
 function startRun(){
-  const a=arena();mode='playing';elapsed=0;wave=0;score=0;enemies=[];hazards=[];particles=[];
+  const a=arena();mode='playing';elapsed=0;wave=0;score=0;kills=0;enemies=[];hazards=[];particles=[];
   wavePause=-1;waveBanner=0;hazardClock=8;shake=0;hitStop=0;intermissionStarted=false;
   attackWas=false;parryWas=false;jumpWas=false;
   player={x:VW*.5,y:VH*.55,vx:0,vy:0,r:18,angle:0,health:6,maxHealth:6,
@@ -193,7 +193,7 @@ function hitEnemy(e,damage,angle,power=200,word=''){
   score+=enemyProfiles[e.type].score*damage;
   shake=Math.max(shake,e.type==='boss'?8:4);hitStop=Math.max(hitStop,e.type==='boss'?.075:.045);
   sound(e.type==='boss'?105:170,.065,'triangle',.035);
-  if(e.hp<=0){e.dead=true;e.death=.42;score+=enemyProfiles[e.type].score;burst(e.x,e.y,20,'#bd7558',280);sound(80,.16,'sawtooth',.04)}
+  if(e.hp<=0){e.dead=true;e.death=.42;kills++;score+=enemyProfiles[e.type].score;burst(e.x,e.y,20,'#bd7558',280);sound(80,.16,'sawtooth',.04)}
 }
 function angleDiff(a,b){return Math.atan2(Math.sin(a-b),Math.cos(a-b))}
 function processPlayerAttack(dt){
@@ -441,13 +441,16 @@ function drawEnemy(e){
   if(e.dead){ctx.globalAlpha=clamp(e.death/.42,0,1);ctx.save();ctx.translate(e.x,e.y);ctx.rotate(elapsed*4);ctx.strokeStyle='rgba(201,127,91,.65)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,e.r*(1.3-e.death),0,TAU);ctx.stroke();ctx.restore();ctx.globalAlpha=1;return}
   const p=enemyProfiles[e.type],boss=e.type==='boss',troll=e.type==='troll',fly=e.type==='flyer';
   const sc=boss?1.7:troll?1.35:fly?1:1;
-  ctx.save();ctx.translate(e.x,e.y+(fly?Math.sin(elapsed*5+e.phase)*5:0));ctx.rotate(e.angle-Math.PI/2);ctx.scale(sc,sc);
+  ctx.save();ctx.translate(e.x,e.y+(fly?Math.sin(elapsed*5+e.phase)*5:0));
   if(e.state==='windup'){
+    ctx.save();ctx.rotate(e.attackAngle);
     const pulse=.7+.3*Math.sin(elapsed*20);
     ctx.strokeStyle='rgba(234,131,85,'+pulse+')';ctx.lineWidth=2.5;glow('#d66d4a',11);
     ctx.beginPath();ctx.arc(0,0,p.reach*.8,-p.arc*.5,p.arc*.5);ctx.stroke();noGlow();
     ctx.strokeStyle='rgba(226,148,98,.33)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,6);ctx.lineTo(p.reach,6);ctx.stroke();
+    ctx.restore();
   }
+  ctx.rotate(e.angle-Math.PI/2);ctx.scale(sc,sc);
   const armor=e.flash>0?'#d4b7a0':boss?'#2c1a1b':troll?'#353035':'#25242a';
   const shell=boss?'#61413a':troll?'#61564d':'#47414a';
   if(fly){
@@ -615,7 +618,7 @@ function draw(){
   if(mode==='playing'||mode==='paused')drawHud();
   drawTouchControls();
   if(mode==='title')drawOverlay('ASHENVEIL','One fighter. A waking arena.','Strike • parry • evade • survive','TAP OR PRESS ENTER TO BEGIN');
-  else if(mode==='over')drawOverlay('THE ARENA CLAIMS YOU','Survived '+fmt(elapsed)+'  •  Reached wave '+wave,'Enemies defeated: '+Math.floor(score/100),'TAP OR PRESS ENTER TO RETURN');
+  else if(mode==='over')drawOverlay('THE ARENA CLAIMS YOU','Survived '+fmt(elapsed)+'  •  Reached wave '+wave,'Enemies defeated: '+kills,'TAP OR PRESS ENTER TO RETURN');
   else if(mode==='paused')drawOverlay('PAUSED','The arena waits.','Press P to return to the fight.','P TO RESUME');
 }
 let last=0;
