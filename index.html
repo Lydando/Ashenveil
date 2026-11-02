@@ -23,6 +23,7 @@ canvas{display:block;width:100%;height:100%;outline:0;touch-action:none}
 <div id="hint">A / D or ← / → · Space jump · Shift dash · W/S on wires · R restart</div>
 <div id="rotate"><div><strong>Rotate your device</strong>Glitched is designed for landscape play.</div></div>
 
+<script src="./tower-backdrop.js"></script>
 <script>
 (()=>{'use strict';
 
@@ -816,6 +817,10 @@ function endRun(){
   shake=1;
 }
 
+function drawTowerBackdrop(viewW,vh,cam){
+  window.GlitchedRender.drawTowerBackdrop(ctx,viewW,vh,cam,runHeight,elapsed);
+}
+
 function draw(){
   ctx.setTransform(DPR,0,0,DPR,0,0);
   ctx.clearRect(0,0,W,H);
@@ -832,212 +837,8 @@ function draw(){
   // Shared visual intensity used by decorative cable and wall details.
   const fracture=clamp(runHeight/2600,0,1);
 
-  // CELESTIAL EXPANSE — monumental, readable layered environment.
-  // Background elements are deliberately larger and higher-contrast than the first pass.
-  {
-    const alt=clamp(runHeight/22000,0,1);
-    const rand=n=>{const z=Math.sin(n*127.1+311.7)*43758.5453;return z-Math.floor(z);};
-    const mix=(a,b,t)=>a+(b-a)*t;
-    const rgba=(a,b,t,alpha=1)=>`rgba(${Math.round(mix(a[0],b[0],t))},${Math.round(mix(a[1],b[1],t))},${Math.round(mix(a[2],b[2],t))},${alpha})`;
-    const sky=ctx.createLinearGradient(0,0,viewW*.2,vh);
-    sky.addColorStop(0,alt>.6?"#0d2a63":"#286db0");
-    sky.addColorStop(.32,alt>.6?"#2458a0":"#69bde8");
-    sky.addColorStop(.66,alt>.6?"#6f9fe0":"#c8edff");
-    sky.addColorStop(1,alt>.6?"#102650":"#8ac5ed");
-    ctx.fillStyle=sky;ctx.fillRect(0,0,viewW,vh);
-
-    // A luminous horizon, like a sun behind an immense cloud ocean.
-    const hx=viewW*(.52+Math.sin(elapsed*.018)*.035),hy=vh*.43;
-    const halo=ctx.createRadialGradient(hx,hy,2,hx,hy,viewW*.62);
-    halo.addColorStop(0,"rgba(255,248,218,.62)");
-    halo.addColorStop(.18,"rgba(255,232,177,.25)");
-    halo.addColorStop(.52,"rgba(145,213,255,.12)");
-    halo.addColorStop(1,"rgba(118,195,255,0)");
-    ctx.fillStyle=halo;ctx.fillRect(0,0,viewW,vh);
-
-    // Deep cloud banks: broad silhouettes, highlighted tops, soft interior light.
-    for(let layer=0;layer<5;layer++){
-      const par=[.018,.035,.065,.11,.17][layer], count=[5,6,7,8,9][layer];
-      for(let i=0;i<count;i++){
-        const seed=810+layer*241+i*37;
-        const x=rand(seed)*viewW*1.5-viewW*.25+Math.sin(elapsed*.025+i*2)*viewW*.025;
-        const y=(rand(seed+1)*(vh+170)+cam*par+elapsed*(1+layer*.8))%(vh+170)-85;
-        const rx=viewW*(.10+rand(seed+2)*.18),ry=vh*(.045+rand(seed+3)*.07);
-        const cg=ctx.createRadialGradient(x,y,rx*.04,x,y,rx);
-        cg.addColorStop(0,layer<2?"rgba(255,250,229,.22)":"rgba(28,76,139,.22)");
-        cg.addColorStop(.55,layer<2?"rgba(220,242,255,.19)":"rgba(38,91,158,.16)");
-        cg.addColorStop(1,"rgba(31,83,145,0)");
-        ctx.fillStyle=cg;ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fill();
-        ctx.beginPath();
-        for(let k=0;k<=10;k++){
-          const px=x-rx+k*rx/5;
-          const py=y+Math.sin(k*1.17+seed)*ry*.24-Math.abs(Math.sin(k*.77+seed))*ry*.2;
-          if(k===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
-        }
-        ctx.strokeStyle=layer<2?"rgba(255,251,230,.24)":"rgba(176,222,255,.17)";
-        ctx.lineWidth=layer>2?1.2:2;ctx.stroke();
-      }
-    }
-
-    // Far-off celestial spires: small, low-contrast silhouettes create scale.
-    for(let i=0;i<17;i++){
-      const seed=1400+i*43,x=rand(seed)*viewW*1.18-viewW*.09;
-      const y=(rand(seed+1)*(vh+250)+cam*.028)%(vh+250)-125;
-      const w=viewW*(.018+rand(seed+2)*.035),h=vh*(.12+rand(seed+3)*.24);
-      ctx.save();ctx.translate(x,y);
-      ctx.fillStyle="rgba(20,55,105,.36)";
-      ctx.beginPath();ctx.moveTo(-w*.8,0);ctx.lineTo(-w*.48,-h*.72);ctx.lineTo(-w*.2,-h*.72);ctx.lineTo(0,-h);ctx.lineTo(w*.2,-h*.72);ctx.lineTo(w*.48,-h*.72);ctx.lineTo(w*.8,0);ctx.closePath();ctx.fill();
-      ctx.strokeStyle="rgba(202,235,255,.24)";ctx.lineWidth=1;ctx.stroke();
-      ctx.strokeStyle="rgba(255,221,148,.25)";ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(0,-h*.94);ctx.lineTo(0,-h*.18);ctx.stroke();
-      ctx.restore();
-    }
-
-    // Three huge, cropped sanctuary complexes. Their layered arches and buttresses
-    // are intentionally unmistakable, not faint box-like outlines.
-    const sanctuary=(x,y,w,h,seed,front)=>{
-      ctx.save();ctx.translate(x,y);
-      const ink=front?"rgba(17,49,96,.83)":"rgba(25,68,119,.48)";
-      const edge=front?"rgba(224,244,255,.78)":"rgba(212,238,255,.38)";
-      const gold=front?"rgba(255,220,145,.9)":"rgba(255,220,145,.46)";
-      // Main suspended mass with a broken, tapered underside.
-      ctx.beginPath();ctx.moveTo(-w*.58,-h*.12);ctx.lineTo(w*.58,-h*.12);ctx.lineTo(w*.48,h*.06);
-      ctx.lineTo(w*.24,h*.24);ctx.lineTo(w*.08,h*.62);ctx.lineTo(-w*.12,h*.39);ctx.lineTo(-w*.42,h*.23);ctx.closePath();
-      const mass=ctx.createLinearGradient(-w*.5,-h*.1,w*.5,h*.5);
-      mass.addColorStop(0,front?"rgba(33,88,145,.92)":"rgba(67,126,178,.58)");
-      mass.addColorStop(.55,ink);mass.addColorStop(1,"rgba(8,28,67,.8)");
-      ctx.fillStyle=mass;ctx.fill();ctx.strokeStyle=edge;ctx.lineWidth=front?1.6:1;ctx.stroke();
-      // Multiple terrace bands, cornices and broken stone/crystal seams.
-      for(let tier=0;tier<4;tier++){
-        const yy=-h*.12+tier*h*.065,ww=w*(.56-tier*.055);
-        ctx.fillStyle=tier%2===0?"rgba(223,242,255,.18)":"rgba(11,44,91,.32)";
-        ctx.fillRect(-ww/2,yy,ww,h*.035);
-        ctx.strokeStyle=tier===0?gold:edge;ctx.lineWidth=tier===0?2:1;
-        ctx.beginPath();ctx.moveTo(-ww/2,yy);ctx.lineTo(ww/2,yy);ctx.stroke();
-      }
-      // Tall lancet arches with inset glowing inner arches.
-      const towers=3+Math.floor(rand(seed)*3);
-      for(let t=0;t<towers;t++){
-        const tx=-w*.43+t*(w*.86/(towers-1)),tw=w*(.09+rand(seed+t+8)*.035),th=h*(.42+rand(seed+t+12)*.34);
-        ctx.fillStyle=ink;ctx.fillRect(tx-tw/2,-h*.17-th,tw,th);
-        ctx.strokeStyle=edge;ctx.lineWidth=front?1.7:1;
-        ctx.strokeRect(tx-tw/2,-h*.17-th,tw,th);
-        ctx.beginPath();ctx.moveTo(tx-tw*.5,-h*.17-th*.72);ctx.quadraticCurveTo(tx,-h*.17-th*1.15,tx+tw*.5,-h*.17-th*.72);ctx.stroke();
-        ctx.strokeStyle=gold;ctx.lineWidth=front?1.2:.7;
-        ctx.beginPath();ctx.moveTo(tx,-h*.17-th*.82);ctx.lineTo(tx,-h*.17-th*.1);ctx.stroke();
-        for(let win=0;win<4;win++){
-          ctx.fillStyle=win%2===0?"rgba(255,230,168,.82)":"rgba(89,213,255,.75)";
-          ctx.fillRect(tx-tw*.13,-h*.17-th*.65+win*th*.13,tw*.26,Math.max(2,th*.045));
-        }
-        // buttress fins and tiny fractured tips
-        ctx.beginPath();ctx.moveTo(tx-tw*.65,-h*.15);ctx.lineTo(tx-tw*.9,-h*.15-th*.55);ctx.lineTo(tx-tw*.42,-h*.15-th*.43);ctx.closePath();
-        ctx.fillStyle="rgba(116,183,226,.24)";ctx.fill();ctx.strokeStyle=edge;ctx.stroke();
-      }
-      // Suspended chains of crystal windows beneath the structure.
-      for(let j=0;j<5;j++){
-        const px=-w*.34+j*w*.17,py=h*(.12+rand(seed+j+22)*.2),sz=Math.max(3,w*.018);
-        ctx.beginPath();ctx.moveTo(px,py-sz*1.8);ctx.lineTo(px+sz,py);ctx.lineTo(px,py+sz*1.6);ctx.lineTo(px-sz*.65,py);ctx.closePath();
-        ctx.fillStyle="rgba(71,201,255,.55)";ctx.fill();ctx.strokeStyle="rgba(231,250,255,.78)";ctx.lineWidth=.8;ctx.stroke();
-      }
-      // Halo arc around each sanctuary.
-      ctx.strokeStyle=gold;ctx.lineWidth=front?2.2:1.2;
-      ctx.beginPath();ctx.ellipse(0,-h*.13,w*.72,h*.24,-.08,Math.PI*1.08,Math.PI*1.94);ctx.stroke();
-      ctx.strokeStyle="rgba(255,255,255,.45)";ctx.lineWidth=.8;
-      ctx.beginPath();ctx.ellipse(0,-h*.13,w*.78,h*.27,-.08,Math.PI*1.12,Math.PI*1.88);ctx.stroke();
-      ctx.restore();
-    };
-    sanctuary(viewW*.18,(vh*.22+cam*.035)%(vh+vh*.8)-vh*.25,viewW*.42,vh*.54,2001,false);
-    sanctuary(viewW*.83,(vh*.58+cam*.065)%(vh+vh*.9)-vh*.3,viewW*.5,vh*.65,2002,true);
-    sanctuary(viewW*.52,(vh*.91+cam*.095)%(vh+vh*.8)-vh*.2,viewW*.31,vh*.42,2003,false);
-
-    // Monumental orbital rings, with a bright gold edge and a second blue refraction.
-    for(let i=0;i<5;i++){
-      const seed=2400+i*113,cx=viewW*(.08+rand(seed)*.84);
-      const cy=(vh*(.12+rand(seed+1)*.85)+cam*[.012,.022,.035,.052,.078][i])%(vh+vh*.6)-vh*.3;
-      const rx=viewW*(.28+rand(seed+2)*.32),ry=rx*(.29+rand(seed+3)*.18),rot=(rand(seed+4)-.5)*.55;
-      ctx.save();ctx.translate(cx,cy);ctx.rotate(rot);
-      ctx.strokeStyle="rgba(255,211,129,.15)";ctx.lineWidth=14;ctx.beginPath();ctx.ellipse(0,0,rx,ry,0,.12,Math.PI*1.8);ctx.stroke();
-      ctx.strokeStyle="rgba(255,225,157,.68)";ctx.lineWidth=2.2;ctx.beginPath();ctx.ellipse(0,0,rx,ry,0,.12,Math.PI*1.8);ctx.stroke();
-      ctx.strokeStyle="rgba(255,255,245,.42)";ctx.lineWidth=.8;ctx.beginPath();ctx.ellipse(0,-3,rx-5,ry-3,0,.2,Math.PI*1.78);ctx.stroke();
-      ctx.strokeStyle="rgba(83,205,255,.56)";ctx.lineWidth=2.3;ctx.beginPath();ctx.ellipse(0,3,rx+3,ry+2,0,Math.PI*.12,Math.PI*.84);ctx.stroke();
-      for(let k=0;k<48;k++){
-        const a=k*Math.PI*2/48,px=Math.cos(a)*rx,py=Math.sin(a)*ry;
-        ctx.save();ctx.translate(px,py);ctx.rotate(a);
-        ctx.strokeStyle=k%4===0?"rgba(255,230,166,.92)":"rgba(255,255,255,.38)";
-        ctx.lineWidth=k%4===0?1.5:.7;ctx.beginPath();ctx.moveTo(-4,0);ctx.lineTo(4,0);ctx.stroke();ctx.restore();
-      }
-      ctx.restore();
-    }
-
-    // Large crystalline monoliths: sharp facets against the soft sky.
-    const crystal=(x,y,w,h,seed,a)=>{
-      ctx.save();ctx.translate(x,y);
-      const p=[[0,-.62],[.25,-.32],[.48,-.05],[.28,.24],[.1,.62],[-.28,.37],[-.47,.04],[-.24,-.28]];
-      ctx.beginPath();p.forEach((v,i)=>i?ctx.lineTo(v[0]*w,v[1]*h):ctx.moveTo(v[0]*w,v[1]*h));ctx.closePath();
-      const g=ctx.createLinearGradient(-w*.5,-h*.2,w*.5,h*.25);
-      g.addColorStop(0,`rgba(241,253,255,${a})`);g.addColorStop(.28,`rgba(92,210,255,${a*.95})`);
-      g.addColorStop(.55,`rgba(27,111,221,${a*.9})`);g.addColorStop(1,`rgba(16,55,144,${a})`);
-      ctx.fillStyle=g;ctx.fill();ctx.strokeStyle=`rgba(238,253,255,${a})`;ctx.lineWidth=1.5;ctx.stroke();
-      ctx.beginPath();ctx.moveTo(0,-h*.62);ctx.lineTo(w*.1,h*.02);ctx.lineTo(-w*.28,h*.37);ctx.closePath();
-      ctx.fillStyle=`rgba(255,255,255,${a*.65})`;ctx.fill();
-      ctx.beginPath();ctx.moveTo(0,-h*.62);ctx.lineTo(w*.25,-h*.32);ctx.lineTo(w*.1,h*.02);ctx.closePath();
-      ctx.fillStyle=`rgba(119,226,255,${a*.7})`;ctx.fill();
-      ctx.beginPath();ctx.moveTo(w*.1,h*.02);ctx.lineTo(w*.48,-h*.05);ctx.lineTo(w*.1,h*.62);ctx.closePath();
-      ctx.fillStyle=`rgba(8,45,143,${a*.72})`;ctx.fill();
-      ctx.strokeStyle=`rgba(255,255,255,${a*.78})`;ctx.lineWidth=.9;
-      ctx.beginPath();ctx.moveTo(-w*.24,-h*.27);ctx.lineTo(w*.1,h*.02);ctx.lineTo(w*.28,h*.24);ctx.stroke();
-      const gl=ctx.createRadialGradient(0,0,1,0,0,w*1.4);
-      gl.addColorStop(0,`rgba(82,214,255,${a*.3})`);gl.addColorStop(1,"rgba(82,214,255,0)");
-      ctx.fillStyle=gl;ctx.beginPath();ctx.arc(0,0,w*1.4,0,Math.PI*2);ctx.fill();
-      ctx.restore();
-    };
-    crystal(viewW*.28,(vh*.25+cam*.028)%(vh+vh*.7)-vh*.15,viewW*.11,vh*.42,3301,.94);
-    crystal(viewW*.76,(vh*.63+cam*.052)%(vh+vh*.8)-vh*.2,viewW*.065,vh*.28,3302,.88);
-    crystal(viewW*.52,(vh*.9+cam*.11)%(vh+vh*.5)-vh*.1,viewW*.035,vh*.17,3303,.72);
-    for(let i=0;i<32;i++){
-      const seed=3500+i*23,x=rand(seed)*viewW;
-      const y=(rand(seed+1)*vh+cam*(.02+rand(seed+2)*.1))%(vh+100)-50;
-      const size=viewW*(.004+rand(seed+3)*.011);
-      ctx.save();ctx.translate(x,y);ctx.rotate((rand(seed+4)-.5)*1.3);
-      crystal(0,0,size,size*(2+rand(seed+5)*2.5),seed,.38+rand(seed+6)*.42);ctx.restore();
-    }
-
-    // Broad, soft sunbeams with brighter cores and warm gold edges.
-    for(let i=0;i<9;i++){
-      const x=viewW*(.02+i*.12),lean=(rand(5000+i)-.5)*viewW*.22,w=viewW*(.025+rand(5100+i)*.045);
-      const beam=ctx.createLinearGradient(x,0,x+lean,vh);
-      beam.addColorStop(0,"rgba(255,255,255,0)");
-      beam.addColorStop(.18,"rgba(255,251,226,.16)");
-      beam.addColorStop(.48,"rgba(213,241,255,.09)");
-      beam.addColorStop(.78,"rgba(255,229,164,.07)");
-      beam.addColorStop(1,"rgba(255,255,255,0)");
-      ctx.beginPath();ctx.moveTo(x-w,0);ctx.lineTo(x+w,0);ctx.lineTo(x+lean+w*1.4,vh);ctx.lineTo(x+lean-w*.7,vh);ctx.closePath();ctx.fillStyle=beam;ctx.fill();
-    }
-
-    // Foreground edge fragments imply a gigantic celestial gate around the shaft.
-    for(let side=0;side<2;side++){
-      ctx.save();ctx.translate(side===0?viewW*.025:viewW*.975,0);ctx.scale(side===0?1:-1,1);
-      ctx.strokeStyle="rgba(255,246,216,.62)";ctx.lineWidth=4;
-      ctx.beginPath();ctx.moveTo(0,-vh*.1);ctx.bezierCurveTo(viewW*.035,vh*.14,viewW*.015,vh*.28,viewW*.045,vh*.43);
-      ctx.bezierCurveTo(viewW*.065,vh*.62,viewW*.02,vh*.78,viewW*.05,vh*1.12);ctx.stroke();
-      ctx.strokeStyle="rgba(255,214,130,.92)";ctx.lineWidth=1.4;
-      ctx.beginPath();ctx.moveTo(3,-vh*.1);ctx.bezierCurveTo(viewW*.038,vh*.14,viewW*.018,vh*.28,viewW*.048,vh*.43);
-      ctx.bezierCurveTo(viewW*.068,vh*.62,viewW*.023,vh*.78,viewW*.053,vh*1.12);ctx.stroke();
-      for(let k=0;k<9;k++){
-        const yy=((vh*k/8-cam*.1)%vh+vh)%vh;
-        ctx.fillStyle="rgba(255,237,185,.9)";ctx.beginPath();ctx.moveTo(0,yy-7);ctx.lineTo(10,yy);ctx.lineTo(0,yy+7);ctx.closePath();ctx.fill();
-        ctx.fillStyle="rgba(72,218,255,.92)";ctx.fillRect(6,yy-2,6,4);
-      }
-      ctx.restore();
-    }
-
-    // Final atmospheric veil and a subtle vignette retain depth without washing out detail.
-    const veil=ctx.createLinearGradient(0,0,0,vh);
-    veil.addColorStop(0,"rgba(230,247,255,.02)");veil.addColorStop(.55,"rgba(190,226,255,.03)");veil.addColorStop(1,"rgba(14,39,91,.20)");
-    ctx.fillStyle=veil;ctx.fillRect(0,0,viewW,vh);
-    const vign=ctx.createRadialGradient(viewW*.5,vh*.45,viewW*.12,viewW*.5,vh*.45,viewW*.8);
-    vign.addColorStop(0,"rgba(5,25,67,0)");vign.addColorStop(.72,"rgba(5,25,67,.05)");vign.addColorStop(1,"rgba(5,25,67,.30)");
-    ctx.fillStyle=vign;ctx.fillRect(0,0,viewW,vh);
-  }
+  // Continuous, height-aware tower backdrop, rendered in screen space.
+  drawTowerBackdrop(viewW,vh,cam);
 
   // Side rails.
   for(let x of [24,world.width-48]){
