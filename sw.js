@@ -1,4 +1,4 @@
-const CACHE_NAME = "glitched-v7";
+const CACHE_NAME = "glitched-v8";
 const APP_BASE = "/Glitched/";
 
 const APP_FILES = [
@@ -7,6 +7,8 @@ const APP_FILES = [
   APP_BASE + "tower-backdrop.js",
   APP_BASE + "assets/tower-machinery-panel.jpg",
   APP_BASE + "assets/player-run.png",
+  APP_BASE + "assets/player-idle.png",
+  APP_BASE + "assets/player-jump.png",
   APP_BASE + "manifest.json",
   APP_BASE + "192.png",
   APP_BASE + "512.png",

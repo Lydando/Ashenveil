@@ -31,6 +31,10 @@ const canvas=document.getElementById('game');
 const ctx=canvas.getContext('2d');
 const playerRunArt=new Image();
 playerRunArt.src='./assets/player-run.png';
+const playerJumpArt=new Image();
+playerJumpArt.src='./assets/player-jump.png';
+const playerIdleArt=new Image();
+playerIdleArt.src='./assets/player-idle.png';
 
 // The uploaded knight run strip drives grounded movement; procedural poses cover idle, air and dash states.
 let W=innerWidth,H=innerHeight,DPR=1;
@@ -553,6 +557,7 @@ function step(dt){
     player.x=clamp(player.x,movementBounds.left,movementBounds.right-player.w);
 
     player.y+=player.vy*dt;
+    const wasGrounded=player.onGround;
     player.onGround=false;
     player.wallSide=0;
 
@@ -638,6 +643,8 @@ function step(dt){
         }
       }
     }
+
+    if(player.onGround&&!wasGrounded)player.landAnim=.18;
 
     if(player.onGround){
       player.coyote=.1;
@@ -1694,19 +1701,46 @@ function drawEntityProcedural(x,y,w,h,ghost){
   ctx.restore();
 }
 function drawEntity(x,y,w,h,ghost){
-  const running=!ghost&&player.onGround&&Math.abs(player.vx)>18;
-  if(running&&playerRunArt.complete&&playerRunArt.naturalWidth>=672){
-    const frame=Math.floor(elapsed*13)%6;
-    const anchorX=x+w/2,anchorY=y+h-1;
+  if(ghost){drawEntityProcedural(x,y,w,h,true);return;}
+  const face=player.face||1;
+  const running=player.onGround&&Math.abs(player.vx)>18;
+  const dashing=player.dashVisual>0;
+
+  function drawFrame(image,frame,cellHeight,drawW,drawH,baseline){
     ctx.save();
-    ctx.translate(anchorX,anchorY);
-    ctx.scale(player.face||1,1);
+    ctx.translate(x+w/2,y+h-1);
+    ctx.scale(face,1);
     ctx.imageSmoothingEnabled=true;
-    ctx.drawImage(playerRunArt,frame*112,0,112,112,-44,-74,88,88);
+    ctx.drawImage(image,frame*112,0,112,cellHeight,-drawW/2,-baseline,drawW,drawH);
     ctx.restore();
+  }
+
+  // The source sheet has six distinct airborne poses, from launch through landing.
+  if(!dashing&&player.onGround&&player.landAnim>0&&playerJumpArt.complete&&playerJumpArt.naturalWidth>=672){
+    drawFrame(playerJumpArt,5,112,88,88,74);
     return;
   }
-  drawEntityProcedural(x,y,w,h,ghost);
+  if(!dashing&&!player.onGround&&playerJumpArt.complete&&playerJumpArt.naturalWidth>=672){
+    let frame;
+    if(player.jumpAnim>.16)frame=0;
+    else if(player.jumpAnim>.08)frame=1;
+    else if(player.vy<-180)frame=3;
+    else if(player.vy<0)frame=2;
+    else frame=4;
+    drawFrame(playerJumpArt,frame,112,88,88,74);
+    return;
+  }
+  if(running&&playerRunArt.complete&&playerRunArt.naturalWidth>=672){
+    const frame=Math.floor(elapsed*13)%6;
+    drawFrame(playerRunArt,frame,112,88,88,74);
+    return;
+  }
+  if(!dashing&&player.onGround&&playerIdleArt.complete&&playerIdleArt.naturalWidth>=224){
+    const frame=Math.floor(elapsed/.78)%2;
+    drawFrame(playerIdleArt,frame,160,60,88,87);
+    return;
+  }
+  drawEntityProcedural(x,y,w,h,false);
 }
 function roundRect(x,y,w,h,r){
   ctx.beginPath();
