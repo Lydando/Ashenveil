@@ -32,7 +32,7 @@ const ctx=canvas.getContext('2d');
 const playerRunArt=new Image();
 playerRunArt.src='./assets/player-run.png';
 
-// Player is drawn procedurally as a faceted glitch entity; no external avatar sprite is loaded.
+// The uploaded knight run strip drives grounded movement; procedural poses cover idle, air and dash states.
 let W=innerWidth,H=innerHeight,DPR=1;
 
 function resize(){
