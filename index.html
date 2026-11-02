@@ -325,7 +325,7 @@ function drawEnemy(e){
   if(e.state==='windup'){
     const pulse=.7+.3*Math.sin(elapsed*19),dir=e.attackDir;
     ctx.strokeStyle='rgba(232,138,87,'+pulse+')';ctx.lineWidth=2.5;glow('#d6724c',10);
-    ctx.beginPath();ctx.moveTo(e.x+dir*12,e.y-16);ctx.lineTo(e.x+dir*(sp.reach+34),e.y-16);ctx.stroke();noGlow();
+    ctx.beginPath();ctx.moveTo(e.x+dir*12*actorScale,e.y-16*actorScale);ctx.lineTo(e.x+dir*(sp.reach+34),e.y-16*actorScale);ctx.stroke();noGlow();
     ctx.fillStyle='rgba(224,137,81,.12)';ctx.fillRect(dir>0?e.x:e.x-sp.reach,e.y-18,p.reach,36);
   }
   ctx.save();ctx.translate(e.x,e.y+(fly?Math.sin(elapsed*5+e.phase)*5*actorScale:0));ctx.scale(e.face*actorScale,actorScale);
@@ -392,7 +392,7 @@ function drawPlayer(){
       const q=clamp(p.attack.t/m.total,0,1),dir=p.attack.face;
       ctx.save();ctx.translate(p.x+dir*20*actorScale,p.y-hop*16*actorScale-4*actorScale);ctx.scale(actorScale,actorScale);
       const grad=ctx.createLinearGradient(0,-48,dir*88,16);grad.addColorStop(0,'rgba(239,205,158,0)');grad.addColorStop(.48,'rgba(225,173,124,.88)');grad.addColorStop(1,'rgba(163,84,63,0)');
-      ctx.strokeStyle=grad;ctx.lineWidth=(p.attack.stage===2?9:6)*actorScale;glow('#c17c58',10);
+      ctx.strokeStyle=grad;ctx.lineWidth=p.attack.stage===2?9:6;glow('#c17c58',10);
       ctx.beginPath();ctx.moveTo(0,8);ctx.quadraticCurveTo(dir*(28+q*18),-42,dir*(m.reach-6),-5);ctx.stroke();noGlow();ctx.restore();
     }
   }
