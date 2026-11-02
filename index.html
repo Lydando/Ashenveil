@@ -302,7 +302,7 @@ function updateEnemy(e,dt){
     e.timer-=dt;
     const advance=p.lunge*dt/Math.max(p.active,.01);
     e.x+=Math.cos(e.attackAngle)*advance;e.y+=Math.sin(e.attackAngle)*advance;
-    if(!e.didHit&&e.timer<=p.active*.52){resolveEnemyAttack(e);e.didHit=true}
+    if(!e.didHit&&e.timer<=p.active*.52){resolveEnemyAttack(e);e.didHit=true;if(e.state==='stunned')return}
     if(e.timer<=0){e.state='recover';e.timer=p.recover}
   }else if(e.state==='recover'){
     e.timer-=dt;if(e.timer<=0)e.state='approach';
@@ -374,7 +374,7 @@ function drawBackdrop(){
   }
   ctx.restore();
   // Flagstones, engraved ring and radial scars.
-  const tile=84,offsetX=(elapsed*4)%tile,offsetY=(elapsed*2)%tile;
+  const tile=84,offsetX=0,offsetY=0;
   ctx.strokeStyle='rgba(176,154,126,.075)';ctx.lineWidth=1;
   for(let x=a.l- tile;x<a.r+tile;x+=tile)for(let y=a.t- tile;y<a.b+tile;y+=tile){
     ctx.strokeRect(x+offsetX,y+offsetY,tile,tile);
