@@ -1,5 +1,7 @@
 (()=>{'use strict';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const towerArt=new Image();
+towerArt.src='./assets/tower-machinery-panel.jpg';
 function drawTowerBackdrop(ctx,viewW,vh,cam,runHeight,elapsed){
   const smooth=(a,b,x)=>{
     const t=clamp((x-a)/(b-a),0,1);
@@ -15,6 +17,28 @@ function drawTowerBackdrop(ctx,viewW,vh,cam,runHeight,elapsed){
 
   // Color and structural damage drift continuously with height; there are no
   // hard visual level cuts for the procedural tower to expose.
+  // Use the uploaded third tower panel as the actual background. A viewport-height
+  // crop moves steadily down the tall artwork as the run gains height, preserving
+  // the original proportions while revealing new parts of the scene smoothly.
+  if(towerArt.complete&&towerArt.naturalWidth>0){
+    const sourceH=Math.min(towerArt.naturalHeight,towerArt.naturalWidth*vh/viewW);
+    const travel=Math.max(0,towerArt.naturalHeight-sourceH);
+    const sourceY=travel*smooth(0,16000,runHeight);
+    ctx.drawImage(towerArt,0,sourceY,towerArt.naturalWidth,sourceH,0,0,viewW,vh);
+    const shade=ctx.createLinearGradient(0,0,0,vh);
+    shade.addColorStop(0,'rgba(3,8,18,.22)');
+    shade.addColorStop(.55,'rgba(2,8,17,.38)');
+    shade.addColorStop(1,'rgba(1,5,13,.56)');
+    ctx.fillStyle=shade;
+    ctx.fillRect(0,0,viewW,vh);
+    const edge=ctx.createRadialGradient(viewW*.5,vh*.48,viewW*.16,viewW*.5,vh*.48,viewW*.82);
+    edge.addColorStop(0,'rgba(0,0,0,0)');
+    edge.addColorStop(1,'rgba(1,3,9,.42)');
+    ctx.fillStyle=edge;
+    ctx.fillRect(0,0,viewW,vh);
+    return;
+  }
+
   const mid=smooth(900,4200,runHeight);
   const machine=smooth(4300,7600,runHeight);
   const high=smooth(9000,13200,runHeight);
