@@ -63,7 +63,7 @@ canvas.addEventListener('pointerdown',e=>{
   const pos=screenToWorld(e.clientX,e.clientY),hit=controls.find(c=>Math.hypot(pos.x-c.x,pos.y-c.y)<=c.r*1.3);
   const control=hit?hit.id:(isTouch()&&pos.x<VW*.35?'stick':null);
   pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,control});
-  if(mode!=='playing'&&mode!=='paused'&&!control)startRun();
+  if(mode!=='playing'&&mode!=='paused')startRun();
   updateTouch();
 });
 canvas.addEventListener('pointermove',e=>{const p=pointers.get(e.pointerId);if(p){p.x=e.clientX;p.y=e.clientY;updateTouch()}});
@@ -354,9 +354,9 @@ function drawEnemy(e){
 function drawPlayer(){
   const p=player,f=p.facing,hop=p.grounded?0:clamp((bounds().f-p.h/2-p.y)/120,0,1);
   const flick=p.invuln>0&&Math.floor(elapsed*24)%2===0;
-  ctx.save();ctx.translate(p.x,p.y);
-  ctx.fillStyle='rgba(0,0,0,.5)';ctx.beginPath();ctx.ellipse(0,p.h*.48,23-hop*6,8-hop*2,0,0,TAU);ctx.fill();ctx.restore();
-  ctx.save();ctx.translate(p.x,p.y-hop*16);ctx.scale(f,1);if(flick)ctx.globalAlpha=.42;
+  ctx.save();ctx.translate(p.x,bounds().f-4);
+  ctx.globalAlpha=1-hop*.58;ctx.fillStyle='rgba(0,0,0,.52)';ctx.beginPath();ctx.ellipse(0,0,23-hop*7,7-hop*2,0,0,TAU);ctx.fill();ctx.restore();
+  ctx.save();ctx.translate(p.x,p.y);ctx.scale(f,1);if(flick)ctx.globalAlpha=.42;
   // Worn mantle, short and asymmetrical, trailing behind the movement.
   ctx.fillStyle='#483135';poly([[-5,-13],[-18,-19],[-29,-13],[-25,-3],[-32,7],[-16,5],[-6,11],[6,8],[14,0],[10,-12]]);ctx.fill();
   ctx.fillStyle='#766a62';poly([[-15,-13],[-25,-11],[-19,-6],[-9,-8],[-3,1],[-9,3]]);ctx.fill();
