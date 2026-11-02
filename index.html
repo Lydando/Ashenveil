@@ -22,11 +22,12 @@ canvas{display:block;width:100%;height:100%;outline:0;touch-action:none}
 <script>
 (()=>{'use strict';
 const canvas=document.getElementById('game'),ctx=canvas.getContext('2d',{alpha:false});
-let cssW=innerWidth,cssH=innerHeight,DPR=1,S=1,VW=1280,VH=720;
+let cssW=innerWidth,cssH=innerHeight,DPR=1,S=1,VW=1280,VH=720,actorScale=1;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),rand=(a,b)=>a+Math.random()*(b-a),TAU=Math.PI*2;
 function resize(){
   cssW=innerWidth;cssH=innerHeight;
   const coarse=matchMedia('(pointer:coarse)').matches||('ontouchstart'in window);
+  actorScale=coarse?3:1;
   DPR=Math.min(devicePixelRatio||1,coarse?2.15:2.75);
   S=cssH/720;VW=cssW/S;VH=cssH/S;
   canvas.width=Math.max(1,Math.floor(cssW*DPR));canvas.height=Math.max(1,Math.floor(cssH*DPR));
@@ -89,7 +90,7 @@ function sound(freq,duration=.08,type='triangle',volume=.04){
 function startRun(){
   const b=bounds();mode='playing';elapsed=0;wave=0;score=0;kills=0;enemies=[];hazards=[];particles=[];
   wavePause=-1;waveBanner=0;hazardClock=7;shake=0;hitStop=0;intermissionStarted=false;attackWas=false;parryWas=false;jumpWas=false;
-  player={x:VW*.5,y:b.f-30,vx:0,vy:0,w:34,h:58,grounded:true,facing:1,health:6,maxHealth:6,
+  player={x:VW*.5,y:b.f-29*actorScale,vx:0,vy:0,w:34*actorScale,h:58*actorScale,grounded:true,facing:1,health:6,maxHealth:6,
     invuln:0,parry:0,parryCooldown:0,jumpCooldown:0,combo:0,comboWindow:0,attack:null,flash:0,stagger:0};
   spawnWave();sound(160,.15,'sine',.04);
 }
@@ -103,10 +104,11 @@ const enemyProfiles={
  flyer:{r:16,w:42,h:38,hp:3,speed:96,engage:110,wind:.60,active:.22,recover:.62,reach:62,damage:1,lunge:170,arc:1.1,height:140,score:180},
  boss:{r:38,w:82,h:126,hp:24,speed:46,engage:145,wind:1.05,active:.36,recover:1.15,reach:156,damage:2,lunge:20,arc:2.08,height:86,score:1400}
 };
+function profileFor(type){const p=enemyProfiles[type];return{...p,r:p.r*actorScale,w:p.w*actorScale,h:p.h*actorScale,engage:p.engage*actorScale,reach:p.reach*actorScale,lunge:p.lunge*actorScale,height:p.height*actorScale}}
 function spawnEnemy(type,side,yOffset=0){
-  const b=bounds(),p=enemyProfiles[type],x=side<0?b.l-p.r-3:b.r+p.r+3;
+  const b=bounds(),base=enemyProfiles[type],p=profileFor(type),x=side<0?b.l-p.r-3:b.r+p.r+3;
   const y=type==='flyer'?b.f-p.height+yOffset:b.f-p.h/2;
-  enemies.push({id:Math.random().toString(36).slice(2),type,x,y,r:p.r,w:p.w,h:p.h,hp:p.hp,maxHp:p.hp,
+  enemies.push({id:Math.random().toString(36).slice(2),type,x,y,r:p.r,w:base.w,h:base.h,hitW:p.w,hitH:p.h,hp:p.hp,maxHp:p.hp,
     state:'enter',timer:.45,face:side<0?1:-1,attackDir:0,didHit:false,flash:0,stun:0,knockX:0,knockY:0,
     side,phase:Math.random()*TAU,dead:false,death:0,showBar:false});
 }
@@ -152,7 +154,7 @@ function damagePlayer(e){
 }
 function overlapsVert(aTop,aBottom,bTop,bBottom){return aBottom>bTop&&aTop<bBottom}
 function resolveEnemyAttack(e){
-  const p=enemyProfiles[e.type],dx=player.x-e.x;
+  const p=profileFor(e.type),dx=player.x-e.x;
   const attackY=e.type==='flyer'?e.y+8:floorY()-p.height;
   const pTop=player.y-player.h/2,pBottom=player.y+player.h/2;
   if(Math.abs(dx)<=p.reach+player.w/2&&e.attackDir*dx> -player.w*.15&&overlapsVert(pTop,pBottom,attackY-24,attackY+24))damagePlayer(e);
@@ -162,9 +164,9 @@ function processAttack(dt){
   if(a.t>=m.wind&&a.t<=m.wind+m.active){
     for(const e of enemies){
       if(e.dead||a.hit.includes(e.id))continue;
-      const dx=e.x-player.x,p=enemyProfiles[e.type],pTop=player.y-player.h/2-m.height*.15,pBottom=player.y+player.h/2;
-      const eTop=e.y-e.h/2,eBottom=e.y+e.h/2;
-      if(a.face*dx>0&&Math.abs(dx)<=m.reach+e.r&&overlapsVert(pTop,pBottom,eTop,eBottom)){
+      const dx=e.x-player.x,p=profileFor(e.type),pTop=player.y-player.h/2-m.height*actorScale*.15,pBottom=player.y+player.h/2;
+      const eTop=e.y-e.hitH/2,eBottom=e.y+e.hitH/2;
+      if(a.face*dx>0&&Math.abs(dx)<=m.reach*actorScale+e.r&&overlapsVert(pTop,pBottom,eTop,eBottom)){
         a.hit.push(e.id);hitEnemy(e,m.damage,a.face,m.knock,a.stage===2?'BREAK':'');
       }
     }
@@ -202,16 +204,16 @@ function inputPlayer(dt){
 }
 function updateEnemy(e,dt){
   if(e.dead){e.death-=dt;return}
-  const p=enemyProfiles[e.type];e.flash=Math.max(0,e.flash-dt);
+  const p=profileFor(e.type);e.flash=Math.max(0,e.flash-dt);
   if(e.state==='stunned'){
     e.x+=e.knockX*dt;e.y+=e.knockY*dt;e.knockX*=Math.max(0,1-dt*8);e.knockY+=900*dt;
-    if(e.type!=='flyer'){const f=bounds().f-e.h/2;if(e.y>=f){e.y=f;e.knockY=0}}
+    if(e.type!=='flyer'){const f=bounds().f-e.hitH/2;if(e.y>=f){e.y=f;e.knockY=0}}
     e.stun-=dt;if(e.stun<=0){e.state='approach';e.timer=rand(.18,.4)}
   }else if(e.state==='enter'||e.state==='approach'){
     const dx=player.x-e.x,dist=Math.abs(dx);e.face=dx<0?-1:1;
     if(e.type==='flyer'){
       const targetY=player.y-74+Math.sin(elapsed*4+e.phase)*32;e.y+=(targetY-e.y)*Math.min(1,dt*1.3);
-    }else e.y=bounds().f-e.h/2;
+    }else e.y=bounds().f-e.hitH/2;
     if(dist>p.engage){e.x+=e.face*p.speed*dt;if(e.state==='enter'){e.timer-=dt;if(e.timer<=0)e.state='approach'}}
     else{e.state='windup';e.timer=p.wind;e.attackDir=e.face;e.didHit=false;sound(e.type==='troll'?88:126,.07,'triangle',.012)}
   }else if(e.state==='windup'){
@@ -319,14 +321,14 @@ function drawHazards(){
 }
 function drawEnemy(e){
   if(e.dead){ctx.globalAlpha=clamp(e.death/.4,0,1);ctx.save();ctx.translate(e.x,e.y);ctx.rotate(e.death*5);ctx.strokeStyle='rgba(203,132,92,.7)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,e.r*(1.25-e.death),0,TAU);ctx.stroke();ctx.restore();ctx.globalAlpha=1;return}
-  const p=enemyProfiles[e.type],boss=e.type==='boss',troll=e.type==='troll',fly=e.type==='flyer';
+  const p=enemyProfiles[e.type],sp=profileFor(e.type),boss=e.type==='boss',troll=e.type==='troll',fly=e.type==='flyer';
   if(e.state==='windup'){
     const pulse=.7+.3*Math.sin(elapsed*19),dir=e.attackDir;
     ctx.strokeStyle='rgba(232,138,87,'+pulse+')';ctx.lineWidth=2.5;glow('#d6724c',10);
-    ctx.beginPath();ctx.moveTo(e.x+dir*12,e.y-16);ctx.lineTo(e.x+dir*(p.reach+34),e.y-16);ctx.stroke();noGlow();
-    ctx.fillStyle='rgba(224,137,81,.12)';ctx.fillRect(dir>0?e.x:e.x-p.reach,e.y-18,p.reach,36);
+    ctx.beginPath();ctx.moveTo(e.x+dir*12,e.y-16);ctx.lineTo(e.x+dir*(sp.reach+34),e.y-16);ctx.stroke();noGlow();
+    ctx.fillStyle='rgba(224,137,81,.12)';ctx.fillRect(dir>0?e.x:e.x-sp.reach,e.y-18,p.reach,36);
   }
-  ctx.save();ctx.translate(e.x,e.y+(fly?Math.sin(elapsed*5+e.phase)*5:0));ctx.scale(e.face,1);
+  ctx.save();ctx.translate(e.x,e.y+(fly?Math.sin(elapsed*5+e.phase)*5*actorScale:0));ctx.scale(e.face*actorScale,actorScale);
   if(fly){
     const flap=Math.sin(elapsed*14+e.phase)*8;
     ctx.fillStyle='#211a20';ctx.beginPath();ctx.moveTo(-5,-10);ctx.quadraticCurveTo(-35,-32-flap,-29,-3);ctx.lineTo(-9,4);ctx.fill();
@@ -347,16 +349,16 @@ function drawEnemy(e){
   if(e.flash>0){ctx.globalAlpha=.36;ctx.fillStyle='#f3d8b7';ctx.beginPath();ctx.ellipse(0,0,e.w*.34,e.h*.42,0,0,TAU);ctx.fill()}
   ctx.restore();
   if(e.showBar&&(e.hp<e.maxHp||boss)){
-    const bw=boss?100:48,y=e.y-e.h*.55;ctx.fillStyle='rgba(7,6,8,.82)';ctx.fillRect(e.x-bw/2,y,bw,5);
+    const bw=(boss?100:48)*actorScale,y=e.y-e.hitH*.55;ctx.fillStyle='rgba(7,6,8,.82)';ctx.fillRect(e.x-bw/2,y,bw,5);
     ctx.fillStyle=boss?'#c07b5f':'#b17d64';ctx.fillRect(e.x-bw/2,y,bw*clamp(e.hp/e.maxHp,0,1),5);
   }
 }
 function drawPlayer(){
   const p=player,f=p.facing,hop=p.grounded?0:clamp((bounds().f-p.h/2-p.y)/120,0,1);
   const flick=p.invuln>0&&Math.floor(elapsed*24)%2===0;
-  ctx.save();ctx.translate(p.x,bounds().f-4);
+  ctx.save();ctx.translate(p.x,bounds().f-4);ctx.scale(actorScale,actorScale);
   ctx.globalAlpha=1-hop*.58;ctx.fillStyle='rgba(0,0,0,.52)';ctx.beginPath();ctx.ellipse(0,0,23-hop*7,7-hop*2,0,0,TAU);ctx.fill();ctx.restore();
-  ctx.save();ctx.translate(p.x,p.y);ctx.scale(f,1);if(flick)ctx.globalAlpha=.42;
+  ctx.save();ctx.translate(p.x,p.y);ctx.scale(f*actorScale,actorScale);if(flick)ctx.globalAlpha=.42;
   // Worn mantle, short and asymmetrical, trailing behind the movement.
   ctx.fillStyle='#483135';poly([[-5,-13],[-18,-19],[-29,-13],[-25,-3],[-32,7],[-16,5],[-6,11],[6,8],[14,0],[10,-12]]);ctx.fill();
   ctx.fillStyle='#766a62';poly([[-15,-13],[-25,-11],[-19,-6],[-9,-8],[-3,1],[-9,3]]);ctx.fill();
@@ -382,15 +384,15 @@ function drawPlayer(){
   ctx.restore();
   if(p.parry>0){
     const q=1-p.parry/.22;ctx.strokeStyle='rgba(230,184,132,'+(1-q*.55)+')';ctx.lineWidth=2.5;glow('#c27b54',8);
-    ctx.beginPath();ctx.arc(p.x+f*17,p.y-4,18+q*12,-1.05,1.05);ctx.stroke();noGlow();
+    ctx.beginPath();ctx.arc(p.x+f*17*actorScale,p.y-4*actorScale,(18+q*12)*actorScale,-1.05,1.05);ctx.stroke();noGlow();
   }
   if(p.attack){
     const m=combos[p.attack.stage];
     if(p.attack.t>m.wind*.5&&p.attack.t<m.wind+m.active*1.4){
       const q=clamp(p.attack.t/m.total,0,1),dir=p.attack.face;
-      ctx.save();ctx.translate(p.x+dir*20,p.y-hop*16-4);
+      ctx.save();ctx.translate(p.x+dir*20*actorScale,p.y-hop*16*actorScale-4*actorScale);ctx.scale(actorScale,actorScale);
       const grad=ctx.createLinearGradient(0,-48,dir*88,16);grad.addColorStop(0,'rgba(239,205,158,0)');grad.addColorStop(.48,'rgba(225,173,124,.88)');grad.addColorStop(1,'rgba(163,84,63,0)');
-      ctx.strokeStyle=grad;ctx.lineWidth=p.attack.stage===2?9:6;glow('#c17c58',10);
+      ctx.strokeStyle=grad;ctx.lineWidth=(p.attack.stage===2?9:6)*actorScale;glow('#c17c58',10);
       ctx.beginPath();ctx.moveTo(0,8);ctx.quadraticCurveTo(dir*(28+q*18),-42,dir*(m.reach-6),-5);ctx.stroke();noGlow();ctx.restore();
     }
   }
