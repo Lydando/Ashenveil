@@ -1,12 +1,6 @@
-const CACHE_NAME = "ashenveil-v1";
+const CACHE_NAME = "ashenveil-climb-v2";
 const APP_BASE = "/Ashenveil/";
-const APP_FILES = [
-  APP_BASE,
-  APP_BASE + "index.html",
-  APP_BASE + "manifest.json",
-  APP_BASE + "192.png",
-  APP_BASE + "512.png"
-];
+const APP_FILES = [APP_BASE, APP_BASE + "index.html", APP_BASE + "manifest.json", APP_BASE + "192.png", APP_BASE + "512.png"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_FILES)).then(() => self.skipWaiting()));
 });
@@ -17,9 +11,10 @@ self.addEventListener("fetch", event => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin || !url.pathname.startsWith(APP_BASE)) return;
-  const isPage = event.request.mode === "navigate" || url.pathname === APP_BASE + "index.html" || url.pathname === APP_BASE;
-  event.respondWith(isPage
-    ? fetch(event.request).then(response => { if (response.ok) { const copy=response.clone(); caches.open(CACHE_NAME).then(cache=>cache.put(event.request,copy)); } return response; }).catch(()=>caches.match(event.request))
-    : caches.match(event.request).then(cached=>cached || fetch(event.request).then(response=>{ if(response.ok){const copy=response.clone();caches.open(CACHE_NAME).then(cache=>cache.put(event.request,copy));} return response; }))
+  const page = event.request.mode === "navigate" || url.pathname === APP_BASE || url.pathname === APP_BASE + "index.html";
+  event.respondWith(page
+    ? fetch(event.request).then(response => { if (response.ok) caches.open(CACHE_NAME).then(cache => cache.put(event.request, response.clone())); return response; }).catch(() => caches.match(event.request).then(hit => hit || caches.match(APP_BASE + "index.html")))
+    : caches.match(event.request).then(hit => hit || fetch(event.request).then(response => { if (response.ok) caches.open(CACHE_NAME).then(cache => cache.put(event.request, response.clone())); return response; }))
   );
 });
+
