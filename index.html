@@ -103,12 +103,12 @@ const stars=[...Array(70)].map(()=>({x:Math.random()*1000,y:Math.random()*1200,r
 const pillars=[...Array(7)].map((_,i)=>({x:i*62-10+Math.random()*20,w:20+Math.random()*26,f:.25+Math.random()*.2}));
 const bnd=y=>{const h=-y,c=180+130*Math.sin(h*.003)+30*Math.sin(h*.0075+1.3),w=240+30*Math.sin(h*.004+2);return[c-w,c+w]};
 const wb=(y,h)=>{const a=bnd(y+h*.5);return[a[0],a[1]]};
-let camX=0,last2=null,wsp=[],E=[],B=[],fx=[],hs=0,arena=null,ga=null,nextGate=-1000,level=0,bn='',bnT=0,storyBeat=0;
+let camX=0,last2=null,wsp=[],E=[],B=[],fx=[],hs=0,arena=null,ga=null,nextGate=-1000,level=0,bn='',bnT=0,storyBeat=0,fogCd=0,fogWarn=0;
 function reset(){
  const b0=bnd(0),c0=(b0[0]+b0[1])/2;
  P={x:c0-9,y:-28,w:18,h:28,vx:0,vy:0,face:1,gr:false,coy:0,wcoy:0,wd:0,wall:0,dash:0,dcd:0,can:true,lock:0,jmp:false,sx:1,sy:1,swing:0,hp:5,inv:0,sw:0,at:0,ac:0,cmb:0,cmbT:0,pg:0,dn:false};
  plats=[{x:b0[0],y:0,w:b0[1]-b0[0],h:16,s:1,z:0}];plats[0].img=platSprite(plats[0]);last={cx:c0,y:0,w:40};last2=null;wsp=[];parts=[];ghosts=[];maxH=0;E=[];B=[];fx=[];hs=0;arena=null;ga=null;nextGate=-1e12;level=0;bn='';bnT=0;storyBeat=0;
- cam=-28-Hv*.6;camX=P.x+9-W/2;fog=200;bestPx=best*10;gen();
+ cam=-28-Hv*.6;camX=P.x+9-W/2;fog=200;fogCd=0;fogWarn=0;bestPx=best*10;gen();
 }
 function gen(){while(last.y>cam-700){
  const hd=-last.y,hard=Math.min(1,hd/6000);
@@ -276,9 +276,9 @@ function step(dt){
  if(arena&&arena.st==1){const m=(arena.yt+arena.yb)/2,q=bnd(m);tx=(q[0]+q[1])/2-W/2;ty=m-Hv/2;kx=ky=3}
  camX+=(tx-camX)*(1-Math.exp(-dt*kx));cam+=(ty-cam)*(1-Math.exp(-dt*ky));
  // fog
- const spd=16+Math.min(40,maxH*.035);
-
- 
+ const spd=16+Math.min(40,maxH*.035);fog-=spd*dt;fogCd=Math.max(0,fogCd-dt);fogWarn=Math.max(0,fogWarn-dt);
+ if(fog-P.y<P.h+130&&fogWarn<=0){bnr('ASH RISES BELOW');fogWarn=6}
+ if(P.y+P.h>fog&&fogCd<=0&&state==='play'){hurtP(1,-P.face);fogCd=1.25;burst(P.x+9,P.y+P.h,12,'175,130,210',100,0)}
  if(P.y>-maxH*10+2000)die();else if(P.inv<=0&&hurt()){hurtP(1,-P.face);P.vy=-480}
  combat(dt);gen();plats=plats.filter(p=>p.y<-maxH*10+2300);wsp=wsp.filter(k=>k.y0<-maxH*10+2300);E=E.filter(e=>e.y<-maxH*10+2300);
  for(const q of parts){q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=120*dt;q.l-=dt}
@@ -413,6 +413,7 @@ function draw(){
  g.globalCompositeOperation='source-over';g.globalAlpha=1;
  for(const f of ff){const x=((f.x+Math.sin(time*.5+f.p)*40-camX*.6)%W+W)%W,y=((f.y+Math.cos(time*.4+f.p)*30-cam*.6)%Hv+Hv)%Hv;g.globalCompositeOperation='lighter';g.globalAlpha=.4+.5*Math.sin(time*2+f.p);g.drawImage(glow,x-7,y-7,14,14)}
  g.globalCompositeOperation='source-over';
+ const fogScreen=fog-cam;if(fogScreen<Hv+100){const edge=Math.max(-24,fogScreen),mist=g.createLinearGradient(0,edge,0,Hv);mist.addColorStop(0,'rgba(106,77,160,0)');mist.addColorStop(.22,'rgba(112,83,162,.13)');mist.addColorStop(1,'rgba(30,24,61,.58)');g.fillStyle=mist;g.fillRect(0,edge,W,Hv-edge);g.globalCompositeOperation='lighter';for(let i=0;i<7;i++){const x=((i*91+Math.sin(time*.7+i)*34-camX*.3)%W+W)%W,y=fogScreen+9+Math.sin(time*1.4+i*2)*5;g.globalAlpha=.12+.08*Math.sin(time*2+i);g.drawImage(fogS,x-34,y-20,68,40)}g.globalCompositeOperation='source-over';g.globalAlpha=1}
  for(const a of ash){const x=((a.x+Math.sin(time*.6+a.y)*18-camX*1.15*a.s)%W+W)%W,y=((a.y+time*(14+a.s*10)-cam*1.2*a.s)%Hv+Hv)%Hv;g.fillStyle=`rgba(225,205,185,${.12+.18*a.s})`;g.fillRect(x,y,a.r,a.r)}
  g.globalAlpha=1;
  if(state=='play'){const lx=P.x+9+P.face*6-camX,ly=P.y+14-cam;
