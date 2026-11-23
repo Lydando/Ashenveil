@@ -1,13 +1,13 @@
 {
   "name": "Ashenveil",
   "short_name": "Ashenveil",
-  "description": "A dark 2D arena fighting prototype.",
+  "description": "Climb the changing tower, fight its guardians, and pogo from enemy to enemy in Ashenveil.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "landscape",
-  "background_color": "#100f12",
-  "theme_color": "#100f12",
+  "background_color": "#05060d",
+  "theme_color": "#05060d",
   "icons": [
     {
       "src": "./192.png",
