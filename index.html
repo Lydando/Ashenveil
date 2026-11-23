@@ -92,6 +92,8 @@ addEventListener('keyup',e=>{const k=km[e.code];if(k)K[k]=0;if(e.code=='ArrowUp'
 // ---------- state ----------
 let P,plats,cam,last,parts,ghosts,fog,state='menu',best=0,bestPx=0,maxH=0,shake=0,time=0,deadAt=0;
 try{best=+localStorage.getItem('es_best')||0}catch(e){}
+let screenShake=true,vibrationOn=true;
+try{screenShake=localStorage.getItem('es_shake')!=='0';vibrationOn=localStorage.getItem('es_vibe')!=='0'}catch(e){}
 let loreSeen=[];try{const savedLore=JSON.parse(localStorage.getItem('es_whispers')||'[]');if(Array.isArray(savedLore))loreSeen=savedLore.filter(i=>Number.isInteger(i)&&i>=0&&i<6)}catch(e){}
 const stars=[...Array(70)].map(()=>({x:Math.random()*1000,y:Math.random()*1200,r:Math.random()*1.2+.3,p:Math.random()*6}));
 const pillars=[...Array(7)].map((_,i)=>({x:i*62-10+Math.random()*20,w:20+Math.random()*26,f:.25+Math.random()*.2}));
@@ -137,7 +139,7 @@ function pauseGame(){
 }
 function resumeGame(){
  if(state!=='paused')return;state='play';document.querySelector('.menuCard h1').textContent='ASHENVEIL';menuOverlay.style.opacity=0;menuOverlay.style.pointerEvents='none';
- document.getElementById('pauseBtn').style.display='flex';bindLore();
+ document.getElementById('pauseBtn').style.display='flex';bindLore();bindControls();bindOptions();
 }
 const menuOverlay=document.getElementById('ov');
 function bindLore(){
@@ -148,15 +150,40 @@ function bindLore(){
   setPage(found.length?'Echoes remembered · '+found.length+' / '+STORY_BEATS.length:'The tower keeps its secrets',body,'Back');
  };
 }
+function bindControls(){
+ const b=document.getElementById('controlsBtn');b.textContent='How to Play';
+ b.onclick=()=>setPage('Move with intention. Strike to survive.','PC: A / D or ← / → move • Space / W / ↑ jump • J / C / K strike • X / Shift dash • S / ↓ for an aerial downward strike • Esc pauses. Strike toward your facing; hold Up to strike overhead. Down-strike an enemy or spike while airborne to pogo back up. Enemies telegraph their attacks—dash through danger. Touch: left side moves; action buttons on the right.');
+}
+function bindOptions(){const b=document.getElementById('optionsBtn');b.textContent='Options';b.onclick=showOptions}
+function savePrefs(){try{localStorage.setItem('es_mute',muted?'1':'0');localStorage.setItem('es_shake',screenShake?'1':'0');localStorage.setItem('es_vibe',vibrationOn?'1':'0')}catch(e){}}
+function syncSoundIcon(){document.getElementById('mu').innerHTML=muted?'&#128263;':'&#128266;'}
+function toggleSound(){muted=!muted;savePrefs();syncSoundIcon();if(mg)mg.gain.value=muted?0:.55;updateOptionsPage()}
+function updateOptionsPage(){
+ document.getElementById('t2').textContent='Sound and music are '+(muted?'off':'on')+'. Screen shake is '+(screenShake?'on':'off')+'. Touch vibration is '+(vibrationOn?'on':'off')+'. These choices are saved on this device.';
+ document.getElementById('loreBtn').textContent='Sound: '+(muted?'Off':'On');
+ document.getElementById('controlsBtn').textContent='Screen shake: '+(screenShake?'On':'Off');
+ document.getElementById('optionsBtn').textContent='Touch vibration: '+(vibrationOn?'On':'Off');
+}
+function showOptions(){
+ document.querySelector('.menuCard h1').textContent='OPTIONS';
+ document.getElementById('t1').textContent='Make the climb your own.';
+ document.getElementById('startBtn').textContent='Back';
+ document.getElementById('startBtn').onclick=()=>state==='paused'?showPause():showHome();
+ document.getElementById('loreBtn').onclick=toggleSound;
+ document.getElementById('controlsBtn').onclick=()=>{screenShake=!screenShake;savePrefs();updateOptionsPage()};
+ document.getElementById('optionsBtn').onclick=()=>{vibrationOn=!vibrationOn;savePrefs();updateOptionsPage()};
+ document.getElementById('menuHint').textContent='ASHENVEIL • OPTIONS SAVED ON THIS DEVICE';
+ updateOptionsPage();
+}
 function showHome(){
  document.querySelector('.menuCard h1').textContent='ASHENVEIL';
  document.getElementById('t1').textContent='The tower is listening. Something above has begun to answer.';
  document.getElementById('t2').textContent='Climb through a shifting ruin, meet the things that haunt its ledges, and discover what waits beyond the ash.';
  document.getElementById('startBtn').textContent='Begin the climb';document.getElementById('startBtn').onclick=begin;
- document.getElementById('menuHint').textContent='ENTER / TAP TO BEGIN';bindLore();
+ document.getElementById('menuHint').textContent='ENTER / TAP TO BEGIN';bindLore();bindControls();bindOptions();
 }
 function showPause(){
- document.querySelector('.menuCard h1').textContent='PAUSED';
+ document.querySelector('.menuCard h1').textContent='PAUSED';bindControls();bindOptions();
  document.getElementById('t1').textContent='The climb can wait.';
  document.getElementById('t2').textContent='Catch your breath. The tower is still moving above you.';
  document.getElementById('startBtn').textContent='Resume climb';document.getElementById('startBtn').onclick=resumeGame;
@@ -171,8 +198,7 @@ function setPage(title,body,button='Back'){
 }
 document.getElementById('startBtn').onclick=begin;
 bindLore();
-document.getElementById('controlsBtn').onclick=()=>setPage('Move with intention. Strike to survive.','PC: A / D or ← / → move • Space / W / ↑ jump • J / C / K strike • X / Shift dash • S / ↓ for an aerial downward strike • Esc pauses. Strike toward your facing; hold Up to strike overhead. Down-strike an enemy or spike while airborne to pogo back up. Enemies telegraph their attacks—dash through danger. Touch: left side moves; action buttons on the right.');
-document.getElementById('optionsBtn').onclick=()=>{muted=!muted;document.getElementById('mu').innerHTML=muted?'&#128263;':'&#128266;';if(mg)mg.gain.value=muted?0:.55;setPage('Sound '+(muted?'muted':'restored')+'.','The tower answers in a low, shifting score. Tap the speaker in the corner or choose Options to change sound. This setting is kept for this session.','Continue')};
+bindControls();bindOptions();
 menuOverlay.addEventListener('pointerdown',e=>{if(e.target===menuOverlay)begin()});
 function die(){
  state='dead';deadAt=performance.now();sfx('hurt');shake=8;burst(P.x+9,P.y+14,40,'255,190,100',220,60);
@@ -196,7 +222,7 @@ function step(dt){
  P.coy=P.gr?T.coyote:P.coy-dt;
  if(dBuf>0&&P.can&&P.dash<=0&&P.dcd<=0){
   const d=dir||P.face;sfx('dash');P.face=d;P.dash=T.dashT;P.can=false;P.dcd=.22;dBuf=0;P.vx=d*T.dash;P.vy=0;shake=3;
-  P.sx=1.35;P.sy=.75;if(navigator.vibrate)try{navigator.vibrate(8)}catch(e){}
+  P.sx=1.35;P.sy=.75;if(vibrationOn&&navigator.vibrate)try{navigator.vibrate(8)}catch(e){}
   burst(P.x+9,P.y+14,14,'255,170,70',90,0);
  }
  if(P.dash>0){
@@ -329,7 +355,7 @@ function drawPole(p,y){
 let wp=null;
 function draw(){
  const hh=Math.min(1,maxH/900),z1=sm((maxH-100)/40),z2=sm((maxH-280)/40),hue=235-40*z1+95*z2;
- const shx=shake>.3?(Math.random()-.5)*shake*.5:0,shy=shake>.3?(Math.random()-.5)*shake*.5:0;
+ const shx=screenShake&&shake>.3?(Math.random()-.5)*shake*.5:0,shy=screenShake&&shake>.3?(Math.random()-.5)*shake*.5:0;
  g.setTransform(1,0,0,1,0,0);
  const bg=g.createLinearGradient(0,0,0,cv.height);bg.addColorStop(0,`hsl(${hue+13},45%,${5+hh*2}%)`);bg.addColorStop(1,`hsl(${hue-13},40%,${12-hh*3}%)`);
  g.fillStyle=bg;g.fillRect(0,0,cv.width,cv.height);
@@ -398,7 +424,7 @@ function draw(){
 let AC=null,mg=null,nz=null,droneG=null,muted=false,mT=2,pT=0,beat=0,intens=0,padLP=null,send=null,nextBar=0,barN=0;
 const ff=[...Array(14)].map(()=>({x:Math.random()*1000,y:Math.random()*600,p:Math.random()*9}));
 const ash=[...Array(46)].map(()=>({x:Math.random()*1000,y:Math.random()*800,s:.5+Math.random()*1.2,r:Math.random()*1.5+.7}));
-function audioInit(){if(AC)return;try{AC=new(window.AudioContext||window.webkitAudioContext)();mg=AC.createGain();mg.gain.value=.55;mg.connect(AC.destination);
+function audioInit(){if(AC)return;try{AC=new(window.AudioContext||window.webkitAudioContext)();mg=AC.createGain();mg.gain.value=muted?0:.55;mg.connect(AC.destination);
  const b=AC.createBuffer(1,AC.sampleRate,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;nz=b;
  const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=900;lp.connect(mg);padLP=lp;{const dl=AC.createDelay(1),fb=AC.createGain(),wt=AC.createGain(),dlp=AC.createBiquadFilter();dl.delayTime.value=.46;fb.gain.value=.4;wt.gain.value=.55;dlp.type='lowpass';dlp.frequency.value=2200;send=AC.createGain();send.connect(dl);dl.connect(dlp);dlp.connect(fb);fb.connect(dl);dlp.connect(wt);wt.connect(mg)}
  droneG=AC.createGain();droneG.gain.value=.035;droneG.connect(lp);
@@ -428,7 +454,9 @@ function music(dt){if(!AC||muted)return;
  intens+=((near?1:0)-intens)*Math.min(1,dt*.7);
  if(!nextBar)nextBar=AC.currentTime+.1;
  while(nextBar<AC.currentTime+.4){bar(nextBar,barN++);nextBar+=BL}}
-document.getElementById('mu').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();muted=!muted;e.currentTarget.innerHTML=muted?'&#128263;':'&#128266;';if(mg)mg.gain.value=muted?0:.55});
+try{muted=localStorage.getItem('es_mute')==='1'}catch(e){}
+syncSoundIcon();
+document.getElementById('mu').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();toggleSound()});
 document.getElementById('pauseBtn').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();pauseGame()});
 // ---------- combat ----------
 const ED={wisp:{w:16,h:16,hp:2,c:1},crawler:{w:22,h:14,hp:3,c:2},archer:{w:16,h:22,hp:3,c:3},brute:{w:34,h:34,hp:12,c:6},boss:{w:46,h:54,hp:40,c:99}};
