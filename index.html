@@ -115,7 +115,7 @@ function hurt(){const x0=P.x+3,x1=P.x+P.w-3,y0=P.y+5,y1=P.y+P.h-1;
  return false}
 function burst(x,y,n,c,sp,up){for(let i=0;i<n;i++){const a=Math.random()*6.28,s=Math.random()*sp;parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-(up||0),l:.4+Math.random()*.5,m:.9,c})}}
 function begin(){audioInit();if(AC&&AC.state=='suspended')AC.resume();if(state=='play')return;if(state=='dead'&&performance.now()-deadAt<700)return;reset();state='play';document.getElementById('ov').style.opacity=0;document.getElementById('ov').style.pointerEvents='none'}
-const ov=document.getElementById('ov');
+const menuOverlay=document.getElementById('ov');
 function showHome(){
  document.getElementById('t1').textContent='The tower is listening. Something above has begun to answer.';
  document.getElementById('t2').textContent='Climb through a shifting ruin, meet the things that haunt its ledges, and discover what waits beyond the ash.';
@@ -132,7 +132,7 @@ document.getElementById('startBtn').onclick=begin;
 document.getElementById('loreBtn').onclick=()=>setPage('Something beneath the stone is climbing too.','The oldest carvings show no king, no god—only a figure sealed above the clouds. Lately, the tower has started opening doors in its sleep. You hear a second set of footsteps whenever you stop.');
 document.getElementById('controlsBtn').onclick=()=>setPage('Move with intention. Strike to survive.','PC: A / D or ← / → move • Space / W / ↑ jump • J / C / K strike • X / Shift dash • S / ↓ for an aerial downward strike. Touch: left side moves; use the three action buttons on the right.');
 document.getElementById('optionsBtn').onclick=()=>{muted=!muted;document.getElementById('mu').innerHTML=muted?'&#128263;':'&#128266;';if(mg)mg.gain.value=muted?0:.55;setPage('Sound '+(muted?'muted':'restored')+'.','The tower answers in a low, shifting score. Tap the speaker in the corner or choose Options to change sound. This setting is kept for this session.','Continue')};
-ov.addEventListener('pointerdown',e=>{if(e.target===ov)begin()});
+menuOverlay.addEventListener('pointerdown',e=>{if(e.target===menuOverlay)begin()});
 function die(){
  state='dead';deadAt=performance.now();sfx('hurt');shake=8;burst(P.x+9,P.y+14,40,'255,190,100',220,60);
  const nb=maxH>best;if(nb){best=Math.floor(maxH);try{localStorage.setItem('es_best',best)}catch(e){}}
