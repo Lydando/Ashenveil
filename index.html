@@ -472,7 +472,7 @@ const ED={wisp:{w:16,h:16,hp:2,c:1},crawler:{w:22,h:14,hp:3,c:2},archer:{w:16,h:
 function ov(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
 function doorMk(y){const b=bnd(y),o={x:b[0]-40,y,w:b[1]-b[0]+80,h:14,s:.5,z:0,door:1,ceil:false};o.img=platSprite(o);plats.push(o);return o}
 const STORY_BEATS=[
- {at:240,banner:'A FOOTSTEP ANSWERS YOURS.',title:'The echo',body:'Your footfall returns in perfect rhythm. The answering step lands a breath after yours.'},
+ {at:240,banner:'A FOOTSTEP ABOVE. THEN SILENCE.',title:'The echo',body:'One footstep sounds higher in the tower. When you stop moving, it stops too. Whatever made it is learning your rhythm.'},
  {at:760,banner:'NOT FROM BELOW. FROM ABOVE.',title:'Above you',body:'The sound falls from the climb ahead. Whatever follows is already higher than you are.'},
  {at:1540,banner:'THE STONE IS ONLY A SKIN.',title:'A living wall',body:'A warm pulse moves beneath the stone. Then the masonry turns cold beneath your hand.'},
  {at:2700,banner:'THEY CALLED IT THE GUEST.',title:'A name in ash',body:'A scratched word survives the soot: GUEST. It has been waiting somewhere inside the tower.'},
