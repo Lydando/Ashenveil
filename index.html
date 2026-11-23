@@ -10,6 +10,10 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
 #hud{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:0;right:0;text-align:center;pointer-events:none;text-shadow:0 0 10px #000}
 #hud b{font-size:30px;font-weight:normal;letter-spacing:1px}
 #hud small{display:block;font-size:13px;opacity:.65;margin-top:2px}
+#lesson{position:fixed;z-index:2;left:50%;top:calc(env(safe-area-inset-top,0px) + 86px);width:min(430px,calc(100vw - 38px));transform:translate(-50%,-8px);box-sizing:border-box;padding:12px 18px;border:1px solid #d4ad74aa;background:linear-gradient(110deg,rgba(12,12,24,.88),rgba(29,21,29,.78));box-shadow:0 10px 32px #0008,inset 0 0 24px #f0b5520c;color:#f2dfc2;font:13px Georgia,serif;letter-spacing:.8px;text-align:center;line-height:1.55;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;backdrop-filter:blur(8px)}
+#lesson:before{content:"✦";display:block;color:#d6a768;font-size:10px;margin-bottom:3px;letter-spacing:3px}
+#lesson.show{opacity:1;transform:translate(-50%,0)}
+@media(max-height:500px) and (orientation:landscape){#lesson{top:58px;padding:7px 12px;font-size:11px;width:min(390px,calc(100vw - 300px))}}
 .b{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 26px);width:70px;height:70px;border-radius:50%;background:rgba(243,220,176,.08);border:1.5px solid rgba(243,220,176,.3);color:#f3dcb0;font-size:13px;display:flex;align-items:center;justify-content:center;touch-action:none;backdrop-filter:blur(3px)}
 .b.on{background:rgba(255,190,90,.35);border-color:#ffc56b}
 #zl{position:fixed;left:0;top:0;bottom:0;width:48%;touch-action:none}
@@ -58,7 +62,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
 @media (prefers-reduced-motion:reduce){#ov .go{animation:none}}
 </style></head><body>
 <canvas id="c"></canvas>
-<div id="hud"><b id="h">0 m</b><small id="bs"></small></div>
+<div id="hud"><b id="h">0 m</b><small id="bs"></small></div><div id="lesson" aria-live="polite"></div>
 <div id="zl"></div><div id="sb"><div id="sk"></div></div>
 <div class="b" id="bd">dash</div><div class="b" id="ba">strike</div><div class="b" id="bj">jump</div>
 <div id="mu" role="button" aria-label="Toggle sound" title="Toggle sound">&#128266;</div><button id="pauseBtn" aria-label="Pause game" title="Pause (Esc)">Ⅱ</button>
@@ -92,7 +96,7 @@ addEventListener('keyup',e=>{const k=km[e.code];if(k)K[k]=0;if(e.code=='ArrowUp'
 // ---------- state ----------
 let P,plats,cam,last,parts,ghosts,fog,state='menu',best=0,bestPx=0,maxH=0,shake=0,time=0,deadAt=0;
 try{best=+localStorage.getItem('es_best')||0}catch(e){}
-let screenShake=true,vibrationOn=true;
+let screenShake=true,vibrationOn=true,lessonStep=0,lessonTimer=0;
 try{screenShake=localStorage.getItem('es_shake')!=='0';vibrationOn=localStorage.getItem('es_vibe')!=='0'}catch(e){}
 let loreSeen=[];try{const savedLore=JSON.parse(localStorage.getItem('es_whispers')||'[]');if(Array.isArray(savedLore))loreSeen=savedLore.filter(i=>Number.isInteger(i)&&i>=0&&i<6)}catch(e){}
 const stars=[...Array(70)].map(()=>({x:Math.random()*1000,y:Math.random()*1200,r:Math.random()*1.2+.3,p:Math.random()*6}));
@@ -133,7 +137,8 @@ function hurt(){const x0=P.x+3,x1=P.x+P.w-3,y0=P.y+5,y1=P.y+P.h-1;
  for(const k of wsp)if(k.y0<y1&&k.y1>y0){if(k.side<0&&P.x<q[0]+13)return true;if(k.side>0&&P.x+P.w>q[1]-13)return true}
  return false}
 function burst(x,y,n,c,sp,up){for(let i=0;i<n;i++){const a=Math.random()*6.28,s=Math.random()*sp;parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-(up||0),l:.4+Math.random()*.5,m:.9,c})}}
-function begin(){audioInit();if(AC&&AC.state=='suspended')AC.resume();if(state=='play')return;if(state=='dead'&&performance.now()-deadAt<700)return;reset();state='play';document.getElementById('pauseBtn').style.display='flex';document.getElementById('ov').style.opacity=0;document.getElementById('ov').style.pointerEvents='none'}
+function teach(text,seconds=0){const el=document.getElementById('lesson');el.textContent=text;el.classList.add('show');lessonTimer=seconds}
+function begin(){audioInit();if(AC&&AC.state=='suspended')AC.resume();if(state=='play')return;if(state=='dead'&&performance.now()-deadAt<700)return;reset();lessonStep=0;teach('Move along the ledges • A / D or ← / →',0);state='play';document.getElementById('pauseBtn').style.display='flex';document.getElementById('ov').style.opacity=0;document.getElementById('ov').style.pointerEvents='none'}
 function pauseGame(){
  if(state!=='play')return;state='paused';menuOverlay.style.opacity=1;menuOverlay.style.pointerEvents='auto';showPause();
 }
@@ -214,6 +219,9 @@ function step(dt){
  if(hs>0){hs-=dt;time+=dt;return}
  time+=dt;jBuf-=dt;dBuf-=dt;aBuf-=dt;
  const dir=K.r-K.l;
+ if(lessonStep===0&&dir){lessonStep=1;teach('Jump onto the next ledge • Space / W / ↑',0)}
+ if(lessonStep===1&&jBuf>0){lessonStep=2;teach('Strike toward your facing • J / C / K',0)}
+ if(lessonStep===2&&aBuf>0){lessonStep=3;teach('Midair: strike down over an enemy to pogo • ↓ + strike',7)}
  if(P.lock>0)P.lock-=dt;P.dcd-=dt;
  const wq=wb(P.y,P.h);P.wall=P.x<=wq[0]+2.5?-1:(P.x+P.w>=wq[1]-2.5?1:0);
  if(!P.wall)for(const p of plats)if(P.y+P.h>p.y+3&&P.y<p.y+p.h-3){if(Math.abs(P.x-(p.x+p.w))<2.5)P.wall=-1;else if(Math.abs(P.x+P.w-p.x)<2.5)P.wall=1}
@@ -590,6 +598,7 @@ function frame(n){
  const dt=Math.min(.05,(n-prev)/1000);prev=n;
  if(state=='play'){const n=Math.max(1,Math.round(dt*120));for(let i=0;i<n&&state=='play';i++)step(dt/n);}
  else{time+=dt;for(const q of parts){q.x+=q.vx*dt;q.y+=q.vy*dt;q.l-=dt}parts=parts.filter(q=>q.l>0);shake*=.9}
+ if(lessonTimer>0){lessonTimer-=dt;if(lessonTimer<=0)document.getElementById('lesson').classList.remove('show')}
  try{draw()}catch(e){console.error(e)}
  music(dt);
  document.getElementById('h').textContent=Math.floor(maxH)+' m';
