@@ -446,7 +446,7 @@ function draw(){
 let AC=null,mg=null,nz=null,droneG=null,windG=null,muted=false,mT=2,pT=0,beat=0,intens=0,padLP=null,send=null,nextBar=0,barN=0;
 const ff=[...Array(14)].map(()=>({x:Math.random()*1000,y:Math.random()*600,p:Math.random()*9}));
 const ash=[...Array(46)].map(()=>({x:Math.random()*1000,y:Math.random()*800,s:.5+Math.random()*1.2,r:Math.random()*1.5+.7}));
-function audioInit(){if(AC)return;try{AC=new(window.AudioContext||window.webkitAudioContext)();mg=AC.createGain();mg.gain.value=muted?0:.55;mg.connect(AC.destination);
+function audioInit(){if(AC)return;try{AC=new(window.AudioContext||window.webkitAudioContext)();mg=AC.createGain();mg.gain.value=muted?0:.55;const master=AC.createDynamicsCompressor();master.threshold.value=-20;master.knee.value=14;master.ratio.value=3.5;master.attack.value=.006;master.release.value=.24;mg.connect(master);master.connect(AC.destination);
  const b=AC.createBuffer(1,AC.sampleRate,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;nz=b;
  const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=900;lp.connect(mg);padLP=lp;{const dl=AC.createDelay(1),fb=AC.createGain(),wt=AC.createGain(),dlp=AC.createBiquadFilter();dl.delayTime.value=.46;fb.gain.value=.4;wt.gain.value=.55;dlp.type='lowpass';dlp.frequency.value=2200;send=AC.createGain();send.connect(dl);dl.connect(dlp);dlp.connect(fb);fb.connect(dl);dlp.connect(wt);wt.connect(mg)}
  droneG=AC.createGain();droneG.gain.value=.028;droneG.connect(lp);
