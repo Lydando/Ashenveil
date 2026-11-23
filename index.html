@@ -157,7 +157,7 @@ function bindControls(){
 function bindOptions(){const b=document.getElementById('optionsBtn');b.textContent='Options';b.onclick=showOptions}
 function savePrefs(){try{localStorage.setItem('es_mute',muted?'1':'0');localStorage.setItem('es_shake',screenShake?'1':'0');localStorage.setItem('es_vibe',vibrationOn?'1':'0')}catch(e){}}
 function syncSoundIcon(){document.getElementById('mu').innerHTML=muted?'&#128263;':'&#128266;'}
-function toggleSound(){muted=!muted;savePrefs();syncSoundIcon();if(mg)mg.gain.value=muted?0:.55;updateOptionsPage()}
+function toggleSound(){muted=!muted;savePrefs();syncSoundIcon();if(mg)mg.gain.value=muted?0:.55;if(document.querySelector('.menuCard h1').textContent==='OPTIONS')updateOptionsPage()}
 function updateOptionsPage(){
  document.getElementById('t2').textContent='Sound and music are '+(muted?'off':'on')+'. Screen shake is '+(screenShake?'on':'off')+'. Touch vibration is '+(vibrationOn?'on':'off')+'. These choices are saved on this device.';
  document.getElementById('loreBtn').textContent='Sound: '+(muted?'Off':'On');
