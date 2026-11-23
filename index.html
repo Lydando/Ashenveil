@@ -346,22 +346,36 @@ function platSprite(p){
  return c}
 function drawPlayer(x,y,face,a,sx,sy,gh){
  const run=P.gr&&Math.abs(P.vx)>20,air=!P.gr,cl=P.wall&&air&&!gh&&P.dash<=0,ds=P.dash>0,ph=P.ph||0;
- g.save();g.globalAlpha=a;g.translate(x+9,y+28+(P.gr&&!run?Math.sin(time*2.2)*.5:0));g.scale((cl?P.wall:face)*sx,sy);
- g.lineCap='round';
- const tx=-(7+Math.min(10,Math.abs(P.vx)*.04))*(ds?1.8:1),ty=-5-(air?P.vy*.014:0)+Math.sin(time*9)*1.2;
- g.fillStyle=gh?'#ff9a3c':'#121829';g.beginPath();g.moveTo(-4,-19);g.quadraticCurveTo(tx*.7,-17,tx,ty);g.quadraticCurveTo(tx*.5,-2,-5,-1);g.closePath();g.fill();
- if(!gh){const sw=run?Math.sin(ph*2)*4:0;g.strokeStyle='#080a14';g.lineWidth=3;g.beginPath();g.moveTo(-2,-4);g.lineTo(-2+sw,air?-1:0);g.moveTo(3,-4);g.lineTo(3-sw,air?-2.5:0);g.stroke()}
- const lg=g.createLinearGradient(-8,0,8,0);lg.addColorStop(0,gh?'#ff9a3c':'#273259');lg.addColorStop(1,gh?'#ff9a3c':'#0e1324');g.fillStyle=lg;
- g.beginPath();g.moveTo(-7,-1);g.quadraticCurveTo(-9,-13,-4,-21);g.quadraticCurveTo(0,-24,5,-21);g.quadraticCurveTo(9,-12,7,-1);g.closePath();g.fill();
- if(!gh){g.strokeStyle='rgba(255,170,80,.6)';g.lineWidth=1.1;g.beginPath();g.moveTo(5,-21);g.quadraticCurveTo(9,-12,7,-1);g.stroke();
+ const bob=P.gr&&!run?Math.sin(time*2.5)*.65:0,wind=Math.sin(time*7+ph)*1.8+(run?-P.vx*.006:0);
+ g.save();g.globalAlpha=a;g.translate(x+9,y+28+bob);g.scale((cl?P.wall:face)*sx*(gh?1:1.12),sy*(gh?1:1.08));g.lineCap='round';g.lineJoin='round';
+ const tx=-(7+Math.min(10,Math.abs(P.vx)*.04))*(ds?1.8:1)+wind,ty=-5-(air?P.vy*.014:0)+Math.sin(time*9)*1.2;
+ const cape=g.createLinearGradient(tx,ty,-2,-12);cape.addColorStop(0,gh?'#ff9a3c':'#080e1c');cape.addColorStop(.58,gh?'#ff9a3c':'#202b49');cape.addColorStop(1,gh?'#ff9a3c':'#10182d');
+ g.fillStyle=cape;g.beginPath();g.moveTo(-4,-19);g.quadraticCurveTo(tx*.72,-17,tx,ty);g.quadraticCurveTo(tx*.6,-2,-5,-1);g.closePath();g.fill();
+ if(!gh){g.strokeStyle='rgba(127,169,220,.55)';g.lineWidth=.8;g.beginPath();g.moveTo(-4,-18);g.quadraticCurveTo(tx*.7,-16,tx,ty);g.stroke();g.strokeStyle='rgba(230,183,124,.45)';g.lineWidth=.65;g.beginPath();g.moveTo(-3,-14);g.quadraticCurveTo(tx*.55,-8,tx*.7,-4);g.stroke()}
+ const gait=run?Math.sin(ph*2)*4:air?Math.max(-2,Math.min(2,P.vy*.004)):0;
+ g.strokeStyle='#080a14';g.lineWidth=3;g.beginPath();g.moveTo(-2,-5);g.lineTo(-2+gait,-1+(air?1:0));g.moveTo(3,-5);g.lineTo(3-gait,-1);g.stroke();
+ if(!gh){g.fillStyle='#343b57';g.beginPath();g.roundRect(-4+gait,-2,5,2.6,1);g.roundRect(1.2-gait,-2,5,2.6,1);g.fill();g.strokeStyle='rgba(221,181,123,.62)';g.lineWidth=.55;g.beginPath();g.moveTo(-3+gait,-.3);g.lineTo(.1+gait,-.3);g.moveTo(2-gait,-.3);g.lineTo(5-gait,-.3);g.stroke()}
+ const body=g.createLinearGradient(-8,-13,8,-7);body.addColorStop(0,gh?'#ff9a3c':'#202a48');body.addColorStop(.55,gh?'#ff9a3c':'#3c4564');body.addColorStop(1,gh?'#ff9a3c':'#131a2e');g.fillStyle=body;
+ g.beginPath();g.moveTo(-7,-2);g.quadraticCurveTo(-9,-13,-4,-21);g.quadraticCurveTo(0,-24,5,-21);g.quadraticCurveTo(9,-12,7,-2);g.quadraticCurveTo(0,1,-7,-2);g.closePath();g.fill();
+ if(!gh){
+  g.strokeStyle='rgba(139,169,220,.72)';g.lineWidth=.75;g.beginPath();g.moveTo(5,-20);g.quadraticCurveTo(9,-12,7,-2);g.moveTo(-5,-17);g.quadraticCurveTo(-2,-12,2,-10);g.stroke();
+  g.strokeStyle='rgba(224,181,116,.68)';g.lineWidth=1.1;g.beginPath();g.moveTo(-6,-7);g.quadraticCurveTo(0,-5,6,-7);g.stroke();
+  g.fillStyle='#d5ad70';g.beginPath();g.roundRect(-1.2,-8.1,2.5,2.2,.5);g.fill();
   g.fillStyle='#1a2342';g.beginPath();g.arc(1.5,-25,6.2,0,6.3);g.fill();g.beginPath();g.moveTo(-3,-29);g.quadraticCurveTo(-9,-33,-13,-29+Math.sin(time*7)*.8);g.quadraticCurveTo(-8,-26,-3,-23);g.fill();
+  g.strokeStyle='rgba(137,170,220,.7)';g.lineWidth=.65;g.beginPath();g.arc(1.5,-25,6.15,-2.5,-.15);g.stroke();
   g.fillStyle='#06070d';g.beginPath();g.ellipse(3.3,-25,3.7,4.2,0,0,6.3);g.fill();
-  const bl=(time%4<.12)?.4:2;g.fillStyle='#ffd48a';g.fillRect(2.6,-26.4,1.4,bl);g.fillRect(5,-26.4,1.4,bl);
-  const lx=9+P.swing*22,ly=-8+Math.abs(P.swing)*5+(run?Math.sin(ph*2)*1.5:0);
-  g.strokeStyle='#0c1020';g.lineWidth=2.2;g.beginPath();g.moveTo(2,-16);g.lineTo(7,-11);g.stroke();
-  g.strokeStyle='#6a5a48';g.lineWidth=.8;g.beginPath();g.moveTo(7,-11);g.lineTo(lx,ly-3);g.stroke();
-  g.fillStyle='#ffe0a0';g.beginPath();g.roundRect(lx-2.2,ly-3,4.4,6,1.2);g.fill();g.strokeStyle='#3a2a1a';g.lineWidth=.7;g.stroke();
-  g.globalCompositeOperation='lighter';g.globalAlpha=.9*(.85+.15*Math.sin(time*9));g.drawImage(glow,lx-15,ly-15,30,30);g.globalCompositeOperation='source-over'}
+  const blink=time%4<.12?.45:2.2;g.globalCompositeOperation='lighter';g.globalAlpha=.85*(.88+.12*Math.sin(time*8));g.fillStyle='#ffd58b';g.fillRect(2.6,-26.4,1.4,blink);g.fillRect(5,-26.4,1.4,blink);g.globalCompositeOperation='source-over';g.globalAlpha=a;
+  const hx=3.5,hy=-13,lx=9+P.swing*22,ly=-8+Math.abs(P.swing)*5+(run?Math.sin(ph*2)*1.5:0);
+  g.strokeStyle='#11182a';g.lineWidth=2.6;g.beginPath();g.moveTo(hx,hy);g.quadraticCurveTo(6,-10,7,-9);g.stroke();
+  g.strokeStyle='#9b815b';g.lineWidth=1.15;g.beginPath();g.moveTo(7,-9);g.lineTo(lx,ly);g.stroke();
+  g.fillStyle='#f3d18c';g.beginPath();g.arc(lx,ly,1.8,0,6.3);g.fill();
+  g.save();g.translate(lx,ly);const ang=P.at>0?(P.dn?Math.PI:P.up?0:Math.PI*.48):.48;g.rotate(ang);
+  const blade=g.createLinearGradient(-2,0,2,-15);blade.addColorStop(0,'#806044');blade.addColorStop(.28,'#d9c69e');blade.addColorStop(.62,'#fff2ce');blade.addColorStop(1,'#9edff0');
+  g.fillStyle='#644632';g.beginPath();g.roundRect(-1.2,-2.3,2.4,6,1);g.fill();
+  g.strokeStyle='#d4b578';g.lineWidth=1.2;g.beginPath();g.moveTo(-3,-1.8);g.lineTo(3,-1.8);g.stroke();
+  g.fillStyle=blade;g.strokeStyle='rgba(247,238,208,.8)';g.lineWidth=.55;g.beginPath();g.moveTo(-1.8,-2);g.lineTo(-1.4,-11.5);g.lineTo(0,-16);g.lineTo(1.6,-11.5);g.lineTo(1.9,-2);g.closePath();g.fill();g.stroke();
+  g.globalCompositeOperation='lighter';g.globalAlpha=.7*(.8+.2*Math.sin(time*11));g.drawImage(glow,-13,-23,26,26);g.globalCompositeOperation='source-over';g.restore();
+ }
  g.restore();
 }
 function tri(x,y,w,h,up){g.beginPath();g.moveTo(x,y);g.lineTo(x+w/2,y+(up?-h:h));g.lineTo(x+w,y);g.closePath();g.fill()}
