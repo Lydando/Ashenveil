@@ -171,7 +171,7 @@ function setPage(title,body,button='Back'){
 }
 document.getElementById('startBtn').onclick=begin;
 bindLore();
-document.getElementById('controlsBtn').onclick=()=>setPage('Move with intention. Strike to survive.','PC: A / D or ← / → move • Space / W / ↑ jump • J / C / K strike • X / Shift dash • S / ↓ for an aerial downward strike. Touch: left side moves; use the three action buttons on the right.');
+document.getElementById('controlsBtn').onclick=()=>setPage('Move with intention. Strike to survive.','PC: A / D or ← / → move • Space / W / ↑ jump • J / C / K strike • X / Shift dash • S / ↓ for an aerial downward strike • Esc pauses. Strike toward your facing; hold Up to strike overhead. Down-strike an enemy or spike while airborne to pogo back up. Enemies telegraph their attacks—dash through danger. Touch: left side moves; action buttons on the right.');
 document.getElementById('optionsBtn').onclick=()=>{muted=!muted;document.getElementById('mu').innerHTML=muted?'&#128263;':'&#128266;';if(mg)mg.gain.value=muted?0:.55;setPage('Sound '+(muted?'muted':'restored')+'.','The tower answers in a low, shifting score. Tap the speaker in the corner or choose Options to change sound. This setting is kept for this session.','Continue')};
 menuOverlay.addEventListener('pointerdown',e=>{if(e.target===menuOverlay)begin()});
 function die(){
