@@ -41,6 +41,20 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
 @media (hover:hover) and (pointer:fine){.b,#zl,#sb{display:none!important}}
 @media (orientation:portrait) and (pointer:coarse){#rot{display:flex}}
 @media (max-width:560px){#ov{padding:14px;background:rgba(3,4,10,.62)}.menuCard{padding:27px 22px 20px}.menuActions{gap:7px}.menuBtn{height:40px}}
+@media (max-height:500px) and (orientation:landscape){
+ #ov{align-items:flex-start;overflow-y:auto;padding:5px 10px}
+ .menuCard{margin:auto;padding:10px 20px 8px}
+ .sig{margin:0 0 4px;font-size:8px}
+ .menuCard h1{font-size:35px;letter-spacing:5px}
+ .tagline{margin:3px 0 8px;font-size:8px}
+ .rule{margin:6px 0}
+ #t1{font-size:12px;line-height:1.25;margin:4px auto 6px}
+ #t2{font-size:10px;line-height:1.3;min-height:0}
+ .menuActions{grid-template-columns:1fr 1fr;gap:5px;margin-top:8px}
+ .menuBtn{height:31px;font-size:9px;letter-spacing:1.5px}
+ .menuFoot{margin-top:6px;font-size:7px}
+ #ov .go{margin-top:6px;font-size:8px}
+}
 @media (prefers-reduced-motion:reduce){#ov .go{animation:none}}
 </style></head><body>
 <canvas id="c"></canvas>
