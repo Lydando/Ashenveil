@@ -443,25 +443,36 @@ function draw(){
 
 
 // ---------- audio ----------
-let AC=null,mg=null,nz=null,droneG=null,muted=false,mT=2,pT=0,beat=0,intens=0,padLP=null,send=null,nextBar=0,barN=0;
+let AC=null,mg=null,nz=null,droneG=null,windG=null,muted=false,mT=2,pT=0,beat=0,intens=0,padLP=null,send=null,nextBar=0,barN=0;
 const ff=[...Array(14)].map(()=>({x:Math.random()*1000,y:Math.random()*600,p:Math.random()*9}));
 const ash=[...Array(46)].map(()=>({x:Math.random()*1000,y:Math.random()*800,s:.5+Math.random()*1.2,r:Math.random()*1.5+.7}));
 function audioInit(){if(AC)return;try{AC=new(window.AudioContext||window.webkitAudioContext)();mg=AC.createGain();mg.gain.value=muted?0:.55;mg.connect(AC.destination);
  const b=AC.createBuffer(1,AC.sampleRate,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;nz=b;
  const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=900;lp.connect(mg);padLP=lp;{const dl=AC.createDelay(1),fb=AC.createGain(),wt=AC.createGain(),dlp=AC.createBiquadFilter();dl.delayTime.value=.46;fb.gain.value=.4;wt.gain.value=.55;dlp.type='lowpass';dlp.frequency.value=2200;send=AC.createGain();send.connect(dl);dl.connect(dlp);dlp.connect(fb);fb.connect(dl);dlp.connect(wt);wt.connect(mg)}
- droneG=AC.createGain();droneG.gain.value=.035;droneG.connect(lp);
+ droneG=AC.createGain();droneG.gain.value=.028;droneG.connect(lp);
  [55,55.35,82.4].forEach(f=>{const o=AC.createOscillator();o.type='sawtooth';o.frequency.value=f;o.connect(droneG);o.start()});
  const lf=AC.createOscillator(),lg=AC.createGain();lf.frequency.value=.06;lg.gain.value=160;lf.connect(lg);lg.connect(lp.frequency);lf.start();
+ const windHP=AC.createBiquadFilter(),windLP=AC.createBiquadFilter(),windSrc=AC.createBufferSource(),windLfo=AC.createOscillator(),windDepth=AC.createGain();windHP.type='highpass';windHP.frequency.value=90;windLP.type='lowpass';windLP.frequency.value=620;windSrc.buffer=nz;windSrc.loop=true;windG=AC.createGain();windG.gain.value=.013;windLfo.frequency.value=.075;windDepth.gain.value=.008;windLfo.connect(windDepth);windDepth.connect(windG.gain);windSrc.connect(windHP);windHP.connect(windLP);windLP.connect(windG);windG.connect(mg);windSrc.start();windLfo.start();
 }catch(e){AC=null}}
 function tone(f,t,dur,type,vol,f2,w){if(!AC||muted)return;const n=AC.currentTime+t,o=AC.createOscillator(),g2=AC.createGain();o.type=type;o.frequency.setValueAtTime(f,n);if(f2)o.frequency.exponentialRampToValueAtTime(f2,n+dur);g2.gain.setValueAtTime(vol,n);g2.gain.exponentialRampToValueAtTime(.0001,n+dur);o.connect(g2);g2.connect(mg);if(w&&send)g2.connect(send);o.start(n);o.stop(n+dur+.02)}
 function noise(t,dur,vol,f0,f1){if(!AC||muted)return;const n=AC.currentTime+t,s=AC.createBufferSource(),fl=AC.createBiquadFilter(),g2=AC.createGain();s.buffer=nz;fl.type='bandpass';fl.frequency.setValueAtTime(f0,n);fl.frequency.exponentialRampToValueAtTime(f1,n+dur);g2.gain.setValueAtTime(vol,n);g2.gain.exponentialRampToValueAtTime(.0001,n+dur);s.connect(fl);fl.connect(g2);g2.connect(mg);s.start(n);s.stop(n+dur+.02)}
-const SFX={jump:()=>tone(260,0,.12,'square',.04,520),land:()=>noise(0,.08,.25,300,120),dash:()=>noise(0,.16,.3,500,2500),
- slash:n=>{noise(0,.1,.25,1500,4000);tone(n==3?170:230,0,.09,'triangle',.07,110)},hit:()=>{noise(0,.1,.4,900,200);tone(120,0,.12,'square',.1,50)},
- kill:()=>{noise(0,.3,.5,1200,100);tone(200,0,.3,'sawtooth',.09,40)},hurt:()=>{tone(150,0,.3,'sawtooth',.16,50);noise(0,.2,.4,600,100)},
- shoot:()=>tone(500,0,.2,'sine',.07,200),wall:()=>noise(0,.06,.15,2000,800),seal:()=>{tone(60,0,.8,'sawtooth',.18,30);noise(0,.6,.3,200,80)},
- open:()=>[392,523,659,784].forEach((f,i)=>tone(f,i*.09,.5,'triangle',.09)),pogo:()=>tone(300,0,.15,'sine',.1,700),
- slam:()=>{noise(0,.4,.6,400,60);tone(70,0,.4,'sine',.28,30)},roar:()=>{tone(90,0,.9,'sawtooth',.18,45);noise(0,.8,.3,300,80)},
- bell:()=>[0,7,12].forEach((s,i)=>tone(220*Math.pow(2,s/12),i*.05,1.2,'sine',.09))};
+const SFX={
+ jump:()=>{tone(245,0,.14,'triangle',.055,590);tone(650,.025,.09,'sine',.025,940);noise(0,.055,.09,900,2200)},
+ land:()=>{noise(0,.11,.23,260,90);tone(105,0,.1,'sine',.09,52)},
+ dash:()=>{noise(0,.19,.2,420,2600);tone(620,0,.17,'triangle',.045,125);tone(1250,.015,.11,'sine',.02,2200)},
+ slash:n=>{noise(0,.085,.2,1450,4200);tone(n==3?245:n==2?380:315,0,.12,'triangle',.065,n==3?72:118);tone(n==3?880:670,.008,.055,'sine',.025,n==3?360:250)},
+ hit:()=>{noise(0,.095,.28,1550,220);tone(175,0,.13,'square',.075,48);tone(720,.004,.09,'sine',.042,260,true)},
+ kill:()=>{noise(0,.22,.24,1750,220);[392,587,784].forEach((f,i)=>tone(f,i*.045,.22,'sine',.052,f*.72,true));tone(95,0,.2,'triangle',.08,42)},
+ hurt:()=>{tone(145,0,.28,'sawtooth',.13,48);noise(0,.18,.27,620,100)},
+ shoot:()=>{tone(540,0,.13,'triangle',.055,265);noise(0,.07,.07,2400,750)},
+ wall:()=>{noise(0,.07,.14,2100,650);tone(180,0,.06,'triangle',.03,90)},
+ seal:()=>{tone(60,0,.8,'sawtooth',.14,30);noise(0,.55,.22,280,70);[220,330].forEach((f,i)=>tone(f,.06*i,.5,'sine',.028,f*.8,true))},
+ open:()=>[392,523,659,784].forEach((f,i)=>tone(f,i*.08,.6,'triangle',.07)),
+ pogo:()=>{noise(0,.08,.13,900,3500);tone(285,0,.18,'sine',.085,660,true);tone(570,.025,.2,'triangle',.04,1040,true)},
+ slam:()=>{noise(0,.4,.48,400,48);tone(70,0,.42,'sine',.23,27);tone(145,.02,.2,'triangle',.07,40)},
+ roar:()=>{tone(90,0,.9,'sawtooth',.16,42);noise(0,.8,.24,300,65)},
+ bell:()=>[0,7,12,19].forEach((s,i)=>tone(220*Math.pow(2,s/12),i*.055,1.35,'sine',.064))
+};
 function sfx(n,a){try{SFX[n](a)}catch(e){}}
 const BL=4*60/78,CHD=[[0,3,7],[-4,0,3],[3,7,10],[-2,2,5]],CON=[0,2,1,3,2,4,3,1],hz=(n,b)=>b*Math.pow(2,n/12);
 function bar(t,b){const c=CHD[b%4],bt=BL/4,T=[...c,...c.map(n=>n+12)],r0=t-AC.currentTime;
@@ -474,6 +485,7 @@ function bar(t,b){const c=CHD[b%4],bt=BL/4,T=[...c,...c.map(n=>n+12)],r0=t-AC.cu
 function music(dt){if(!AC||muted)return;
  const near=state=='play'&&E.some(e=>Math.abs(e.y-P.y)<300&&Math.abs(e.x-P.x)<450);
  intens+=((near?1:0)-intens)*Math.min(1,dt*.7);
+ const now=AC.currentTime;if(droneG)droneG.gain.setTargetAtTime(.026+.012*intens,now,.45);if(windG)windG.gain.setTargetAtTime(.012+.008*intens,now,.6);
  if(!nextBar)nextBar=AC.currentTime+.1;
  while(nextBar<AC.currentTime+.4){bar(nextBar,barN++);nextBar+=BL}}
 try{muted=localStorage.getItem('es_mute')==='1'}catch(e){}
