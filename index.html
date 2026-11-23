@@ -16,9 +16,11 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
 #sb{position:fixed;left:calc(env(safe-area-inset-left,0px) + 34px);bottom:30px;width:110px;height:110px;border-radius:50%;border:2px solid rgba(243,220,176,.25);background:rgba(243,220,176,.05);pointer-events:none;opacity:.55}
 #sk{position:absolute;left:32px;top:32px;width:46px;height:46px;border-radius:50%;background:rgba(243,220,176,.28);border:1.5px solid rgba(243,220,176,.5)}
 #bj{right:calc(env(safe-area-inset-right,0px) + 18px);width:80px;height:80px}#bd{right:calc(env(safe-area-inset-right,0px) + 44px);bottom:calc(env(safe-area-inset-bottom,0px) + 118px)}#ba{right:calc(env(safe-area-inset-right,0px) + 108px);bottom:calc(env(safe-area-inset-bottom,0px) + 30px);width:76px;height:76px}
-#mu{position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);right:calc(env(safe-area-inset-right,0px) + 14px);width:40px;height:40px;border-radius:50%;background:rgba(243,220,176,.08);border:1.5px solid rgba(243,220,176,.3);display:flex;align-items:center;justify-content:center;font-size:17px;z-index:6;touch-action:none}
+#mu,#pauseBtn{position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);width:40px;height:40px;border-radius:50%;background:rgba(243,220,176,.08);border:1.5px solid rgba(243,220,176,.3);display:flex;align-items:center;justify-content:center;font-size:17px;z-index:6;touch-action:none;backdrop-filter:blur(5px);color:#f3dcb0}
+#mu{right:calc(env(safe-area-inset-right,0px) + 14px)}
+#pauseBtn{display:none;right:calc(env(safe-area-inset-right,0px) + 62px);cursor:pointer}
 #rot{display:none;position:fixed;inset:0;z-index:99;background:#05060d;align-items:center;justify-content:center;text-align:center;font-size:20px;padding:30px;line-height:1.6}
-@media (orientation:portrait){#rot{display:flex}}
+@media (orientation:portrait) and (pointer:coarse){#rot{display:flex}}
 #ov{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(90deg,rgba(3,4,10,.2),rgba(3,4,10,.62) 45%,rgba(3,4,10,.82));text-align:center;padding:24px;transition:opacity .4s;z-index:4;box-sizing:border-box}
 .menuCard{position:relative;width:min(430px,92vw);padding:34px 32px 25px;box-sizing:border-box;border:1px solid rgba(237,203,150,.34);background:linear-gradient(145deg,rgba(15,16,31,.92),rgba(5,7,16,.9));box-shadow:0 22px 80px #000b,inset 0 0 38px #b17b2810;backdrop-filter:blur(12px)}
 .menuCard:before,.menuCard:after{content:"";position:absolute;width:26px;height:26px;border-color:#e5b978}
@@ -45,7 +47,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
 <div id="hud"><b id="h">0 m</b><small id="bs"></small></div>
 <div id="zl"></div><div id="sb"><div id="sk"></div></div>
 <div class="b" id="bd">dash</div><div class="b" id="ba">strike</div><div class="b" id="bj">jump</div>
-<div id="mu">&#128266;</div>
+<div id="mu" role="button" aria-label="Toggle sound" title="Toggle sound">&#128266;</div><button id="pauseBtn" aria-label="Pause game" title="Pause (Esc)">Ⅱ</button>
 <div id="rot">Rotate your phone to landscape<br>to play Ashenveil</div>
 <div id="ov"><section class="menuCard"><div class="sig">A game of the forgotten heights</div><h1>ASHENVEIL</h1><div class="tagline">The Hollow Ascent</div><div class="rule"></div>
 <p id="t1">The tower is listening. Something above has begun to answer.</p>
@@ -71,7 +73,7 @@ zl.addEventListener('pointermove',e=>{if(e.pointerId===sid)mv(e)});
 const sEnd=e=>{if(e.pointerId!==sid)return;sid=null;K.l=K.r=K.d=K.u=0;sb.style.cssText='';sk.style.transform=''};
 zl.addEventListener('pointerup',sEnd);zl.addEventListener('pointercancel',sEnd);bind('bj',v=>{K.j=v;if(v)jBuf=T.buffer});bind('bd',v=>{if(v)dBuf=T.buffer});bind('ba',v=>{if(v)aBuf=T.buffer});
 const km={ArrowLeft:'l',KeyA:'l',ArrowRight:'r',KeyD:'r',Space:'j',ArrowUp:'j',KeyZ:'j',KeyW:'j',ArrowDown:'d',KeyS:'d'};
-addEventListener('keydown',e=>{if(e.repeat)return;const k=km[e.code];if(k){K[k]=1;if(k=='j')jBuf=T.buffer}if(e.code=='ArrowUp'||e.code=='KeyW')K.u=1;if(e.code=='KeyX'||e.code=='ShiftLeft')dBuf=T.buffer;if(e.code=='KeyC'||e.code=='KeyK'||e.code=='KeyJ')aBuf=T.buffer;if((e.code==='Enter'||e.code==='Space')&&state!=='play')begin()});
+addEventListener('keydown',e=>{if(e.repeat)return;const k=km[e.code];if(k){K[k]=1;if(k=='j')jBuf=T.buffer}if(e.code=='ArrowUp'||e.code=='KeyW')K.u=1;if(e.code=='KeyX'||e.code=='ShiftLeft')dBuf=T.buffer;if(e.code=='KeyC'||e.code=='KeyK'||e.code=='KeyJ')aBuf=T.buffer;if(e.code==='Escape'){if(state==='play')pauseGame();else if(state==='paused')resumeGame();e.preventDefault();return}if((e.code==='Enter'||e.code==='Space')&&state!=='play'&&state!=='paused')begin()});
 addEventListener('keyup',e=>{const k=km[e.code];if(k)K[k]=0;if(e.code=='ArrowUp'||e.code=='KeyW')K.u=0});
 // ---------- state ----------
 let P,plats,cam,last,parts,ghosts,fog,state='menu',best=0,bestPx=0,maxH=0,shake=0,time=0,deadAt=0;
@@ -114,7 +116,19 @@ function hurt(){const x0=P.x+3,x1=P.x+P.w-3,y0=P.y+5,y1=P.y+P.h-1;
  for(const k of wsp)if(k.y0<y1&&k.y1>y0){if(k.side<0&&P.x<q[0]+13)return true;if(k.side>0&&P.x+P.w>q[1]-13)return true}
  return false}
 function burst(x,y,n,c,sp,up){for(let i=0;i<n;i++){const a=Math.random()*6.28,s=Math.random()*sp;parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-(up||0),l:.4+Math.random()*.5,m:.9,c})}}
-function begin(){audioInit();if(AC&&AC.state=='suspended')AC.resume();if(state=='play')return;if(state=='dead'&&performance.now()-deadAt<700)return;reset();state='play';document.getElementById('ov').style.opacity=0;document.getElementById('ov').style.pointerEvents='none'}
+function begin(){audioInit();if(AC&&AC.state=='suspended')AC.resume();if(state=='play')return;if(state=='dead'&&performance.now()-deadAt<700)return;reset();state='play';document.getElementById('pauseBtn').style.display='flex';document.getElementById('ov').style.opacity=0;document.getElementById('ov').style.pointerEvents='none'}
+function pauseGame(){
+ if(state!=='play')return;state='paused';menuOverlay.style.opacity=1;menuOverlay.style.pointerEvents='auto';document.querySelector('.menuCard h1').textContent='PAUSED';
+ document.getElementById('t1').textContent='The climb can wait.';
+ document.getElementById('t2').textContent='Catch your breath. The tower is still moving above you.';
+ document.getElementById('startBtn').textContent='Resume climb';document.getElementById('startBtn').onclick=resumeGame;
+ document.getElementById('loreBtn').textContent='Return to title';document.getElementById('loreBtn').onclick=()=>{state='menu';document.getElementById('pauseBtn').style.display='none';showHome()};
+ document.getElementById('menuHint').textContent='ESC / TAP TO RESUME';
+}
+function resumeGame(){
+ if(state!=='paused')return;state='play';document.querySelector('.menuCard h1').textContent='ASHENVEIL';menuOverlay.style.opacity=0;menuOverlay.style.pointerEvents='none';
+ document.getElementById('pauseBtn').style.display='flex';
+}
 const menuOverlay=document.getElementById('ov');
 function showHome(){
  document.getElementById('t1').textContent='The tower is listening. Something above has begun to answer.';
@@ -139,6 +153,7 @@ function die(){
  const o=document.getElementById('ov');o.style.opacity=1;o.style.pointerEvents='auto';
  document.getElementById('t1').textContent='Your light went out at '+Math.floor(maxH)+' m';
  document.getElementById('t2').textContent=(nb?'A new record. ':'')+'Best: '+best+' m. Your ember will mark it on the wall.';
+ document.getElementById('pauseBtn').style.display='none';
  document.getElementById('startBtn').textContent='Climb again';document.getElementById('startBtn').onclick=()=>{state='menu';begin()};
 }
 // ---------- simulation ----------
@@ -382,6 +397,7 @@ function music(dt){if(!AC||muted)return;
  if(!nextBar)nextBar=AC.currentTime+.1;
  while(nextBar<AC.currentTime+.4){bar(nextBar,barN++);nextBar+=BL}}
 document.getElementById('mu').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();muted=!muted;e.currentTarget.innerHTML=muted?'&#128263;':'&#128266;';if(mg)mg.gain.value=muted?0:.55});
+document.getElementById('pauseBtn').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();pauseGame()});
 // ---------- combat ----------
 const ED={wisp:{w:16,h:16,hp:2,c:1},crawler:{w:22,h:14,hp:3,c:2},archer:{w:16,h:22,hp:3,c:3},brute:{w:34,h:34,hp:12,c:6},boss:{w:46,h:54,hp:40,c:99}};
 function ov(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
