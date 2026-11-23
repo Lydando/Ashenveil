@@ -118,32 +118,40 @@ function hurt(){const x0=P.x+3,x1=P.x+P.w-3,y0=P.y+5,y1=P.y+P.h-1;
 function burst(x,y,n,c,sp,up){for(let i=0;i<n;i++){const a=Math.random()*6.28,s=Math.random()*sp;parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-(up||0),l:.4+Math.random()*.5,m:.9,c})}}
 function begin(){audioInit();if(AC&&AC.state=='suspended')AC.resume();if(state=='play')return;if(state=='dead'&&performance.now()-deadAt<700)return;reset();state='play';document.getElementById('pauseBtn').style.display='flex';document.getElementById('ov').style.opacity=0;document.getElementById('ov').style.pointerEvents='none'}
 function pauseGame(){
- if(state!=='play')return;state='paused';menuOverlay.style.opacity=1;menuOverlay.style.pointerEvents='auto';document.querySelector('.menuCard h1').textContent='PAUSED';
- document.getElementById('t1').textContent='The climb can wait.';
- document.getElementById('t2').textContent='Catch your breath. The tower is still moving above you.';
- document.getElementById('startBtn').textContent='Resume climb';document.getElementById('startBtn').onclick=resumeGame;
- document.getElementById('loreBtn').textContent='Return to title';document.getElementById('loreBtn').onclick=()=>{state='menu';document.getElementById('pauseBtn').style.display='none';showHome()};
- document.getElementById('menuHint').textContent='ESC / TAP TO RESUME';
+ if(state!=='play')return;state='paused';menuOverlay.style.opacity=1;menuOverlay.style.pointerEvents='auto';showPause();
 }
 function resumeGame(){
  if(state!=='paused')return;state='play';document.querySelector('.menuCard h1').textContent='ASHENVEIL';menuOverlay.style.opacity=0;menuOverlay.style.pointerEvents='none';
- document.getElementById('pauseBtn').style.display='flex';
+ document.getElementById('pauseBtn').style.display='flex';bindLore();
 }
 const menuOverlay=document.getElementById('ov');
+function bindLore(){
+ const b=document.getElementById('loreBtn');b.textContent='The tower’s secret';
+ b.onclick=()=>setPage('Something beneath the stone is climbing too.','The oldest carvings show no king, no god—only a figure sealed above the clouds. Lately, the tower has started opening doors in its sleep. You hear a second set of footsteps whenever you stop.');
+}
 function showHome(){
+ document.querySelector('.menuCard h1').textContent='ASHENVEIL';
  document.getElementById('t1').textContent='The tower is listening. Something above has begun to answer.';
  document.getElementById('t2').textContent='Climb through a shifting ruin, meet the things that haunt its ledges, and discover what waits beyond the ash.';
  document.getElementById('startBtn').textContent='Begin the climb';document.getElementById('startBtn').onclick=begin;
- document.getElementById('menuHint').textContent='ENTER / TAP TO BEGIN';
+ document.getElementById('menuHint').textContent='ENTER / TAP TO BEGIN';bindLore();
+}
+function showPause(){
+ document.querySelector('.menuCard h1').textContent='PAUSED';
+ document.getElementById('t1').textContent='The climb can wait.';
+ document.getElementById('t2').textContent='Catch your breath. The tower is still moving above you.';
+ document.getElementById('startBtn').textContent='Resume climb';document.getElementById('startBtn').onclick=resumeGame;
+ const b=document.getElementById('loreBtn');b.textContent='Return to title';b.onclick=()=>{state='menu';document.getElementById('pauseBtn').style.display='none';showHome()};
+ document.getElementById('menuHint').textContent='ESC / TAP TO RESUME';
 }
 function setPage(title,body,button='Back'){
  document.getElementById('t1').textContent=title;document.getElementById('t2').textContent=body;
  document.getElementById('startBtn').textContent=button;
- document.getElementById('startBtn').onclick=showHome;
+ document.getElementById('startBtn').onclick=()=>state==='paused'?showPause():showHome();
  document.getElementById('menuHint').textContent='ASHENVEIL • THE HOLLOW ASCENT';
 }
 document.getElementById('startBtn').onclick=begin;
-document.getElementById('loreBtn').onclick=()=>setPage('Something beneath the stone is climbing too.','The oldest carvings show no king, no god—only a figure sealed above the clouds. Lately, the tower has started opening doors in its sleep. You hear a second set of footsteps whenever you stop.');
+bindLore();
 document.getElementById('controlsBtn').onclick=()=>setPage('Move with intention. Strike to survive.','PC: A / D or ← / → move • Space / W / ↑ jump • J / C / K strike • X / Shift dash • S / ↓ for an aerial downward strike. Touch: left side moves; use the three action buttons on the right.');
 document.getElementById('optionsBtn').onclick=()=>{muted=!muted;document.getElementById('mu').innerHTML=muted?'&#128263;':'&#128266;';if(mg)mg.gain.value=muted?0:.55;setPage('Sound '+(muted?'muted':'restored')+'.','The tower answers in a low, shifting score. Tap the speaker in the corner or choose Options to change sound. This setting is kept for this session.','Continue')};
 menuOverlay.addEventListener('pointerdown',e=>{if(e.target===menuOverlay)begin()});
@@ -341,7 +349,7 @@ function draw(){
  for(const q of ghosts)drawPlayer(q.x,q.y-cam,q.f,q.l*2.2,1.15,.9,true);
  for(const q of parts){const al=Math.max(0,q.l/q.m);if(q.c[0]=='2'&&q.c[1]=='5'){g.globalCompositeOperation='lighter';g.globalAlpha=al;g.drawImage(glow,q.x-4,q.y-cam-4,8,8);g.globalCompositeOperation='source-over';g.globalAlpha=1}else{g.fillStyle=`rgba(${q.c},${al})`;g.fillRect(q.x,q.y-cam,2,2)}}
  drawEnemies();
- if(state=='play'){P.ph=(P.ph||0)+Math.abs(P.vx)*.00055;drawPlayer(P.x,P.y-cam,P.face,P.inv>0&&((time*20|0)%2)?.35:1,P.sx,P.sy)}
+ if(state=='play'||state=='paused'){P.ph=(P.ph||0)+Math.abs(P.vx)*.00055;drawPlayer(P.x,P.y-cam,P.face,P.inv>0&&((time*20|0)%2)?.35:1,P.sx,P.sy)}
  g.setTransform(sc,0,0,sc,0,0);
  for(const m of motes){const mx=((m.x+Math.sin(time*.4+m.y)*14-camX*.35*m.s)%W+W)%W,my=((m.y-time*8*m.s-cam*.3*m.s)%Hv+Hv)%Hv;g.globalCompositeOperation='lighter';g.globalAlpha=.3*m.s;g.drawImage(glow,mx-3,my-3,6,6)}
  g.globalCompositeOperation='source-over';g.globalAlpha=1;
