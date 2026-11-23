@@ -19,11 +19,26 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
 #mu{position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);right:calc(env(safe-area-inset-right,0px) + 14px);width:40px;height:40px;border-radius:50%;background:rgba(243,220,176,.08);border:1.5px solid rgba(243,220,176,.3);display:flex;align-items:center;justify-content:center;font-size:17px;z-index:6;touch-action:none}
 #rot{display:none;position:fixed;inset:0;z-index:99;background:#05060d;align-items:center;justify-content:center;text-align:center;font-size:20px;padding:30px;line-height:1.6}
 @media (orientation:portrait){#rot{display:flex}}
-#ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(3,4,10,.72);text-align:center;padding:24px;transition:opacity .4s}
-#ov h1{font-size:44px;font-weight:normal;letter-spacing:4px;margin:0 0 10px;color:#ffcf85;text-shadow:0 0 24px #ff9a3c}
-#ov p{margin:6px 0;opacity:.8;font-size:15px;line-height:1.5;max-width:300px}
-#ov .go{margin-top:22px;font-size:16px;letter-spacing:2px;animation:p 1.8s infinite}
+#ov{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(90deg,rgba(3,4,10,.2),rgba(3,4,10,.62) 45%,rgba(3,4,10,.82));text-align:center;padding:24px;transition:opacity .4s;z-index:4;box-sizing:border-box}
+.menuCard{position:relative;width:min(430px,92vw);padding:34px 32px 25px;box-sizing:border-box;border:1px solid rgba(237,203,150,.34);background:linear-gradient(145deg,rgba(15,16,31,.92),rgba(5,7,16,.9));box-shadow:0 22px 80px #000b,inset 0 0 38px #b17b2810;backdrop-filter:blur(12px)}
+.menuCard:before,.menuCard:after{content:"";position:absolute;width:26px;height:26px;border-color:#e5b978}
+.menuCard:before{top:8px;left:8px;border-top:1px solid;border-left:1px solid}.menuCard:after{right:8px;bottom:8px;border-right:1px solid;border-bottom:1px solid}
+.sig{font:10px Georgia;letter-spacing:5px;color:#c89b67;text-transform:uppercase;margin-bottom:13px}
+#ov h1{font-size:clamp(42px,10vw,66px);font-weight:normal;letter-spacing:7px;line-height:1;margin:0;color:#ffe0a5;text-shadow:0 0 28px #ff9a3c80}
+.tagline{font:11px Georgia;letter-spacing:4px;color:#c3b9d3;margin:12px 0 22px;text-transform:uppercase}
+.rule{width:100%;height:1px;background:linear-gradient(90deg,transparent,#c59b65aa,transparent);margin:16px 0}
+#t1{font:italic 15px Georgia;color:#e6d8c4;line-height:1.7;margin:12px auto 20px;max-width:310px}
+#t2{font:12px Georgia;color:#b9b6c1;line-height:1.8;margin:0 auto;max-width:330px;min-height:52px}
+.menuActions{display:grid;gap:9px;margin-top:22px}
+.menuBtn{height:43px;border:1px solid #b58e61;background:linear-gradient(90deg,#8e593b,#bd8953,#8e593b);color:#fff0d1;font:12px Georgia;letter-spacing:3px;text-transform:uppercase;cursor:pointer}
+.menuBtn.secondary{background:rgba(243,220,176,.035);border-color:#c4b7a244;color:#d4c9b5}
+.menuBtn:active{filter:brightness(1.4);transform:scale(.985)}
+.menuFoot{font:9px Georgia;color:#898595;letter-spacing:2px;margin-top:17px;text-transform:uppercase}
+#ov .go{margin-top:18px;font:11px Georgia;letter-spacing:2px;color:#f0c783;animation:p 1.8s infinite}
 @keyframes p{50%{opacity:.35}}
+@media (hover:hover) and (pointer:fine){.b,#zl,#sb{display:none!important}}
+@media (orientation:portrait) and (pointer:coarse){#rot{display:flex}}
+@media (max-width:560px){#ov{padding:14px;background:rgba(3,4,10,.62)}.menuCard{padding:27px 22px 20px}.menuActions{gap:7px}.menuBtn{height:40px}}
 @media (prefers-reduced-motion:reduce){#ov .go{animation:none}}
 </style></head><body>
 <canvas id="c"></canvas>
@@ -32,10 +47,11 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
 <div class="b" id="bd">dash</div><div class="b" id="ba">strike</div><div class="b" id="bj">jump</div>
 <div id="mu">&#128266;</div>
 <div id="rot">Rotate your phone to landscape<br>to play Ashenveil</div>
-<div id="ov"><h1>ASHENVEIL</h1>
-<p id="t1">Climb the tower. Reach new heights.</p>
-<p id="t2">Climb the tower and fight what lurks on the ledges. Strike for a 3-hit combo; hold the stick up to strike up, or down in the air to bounce off foes. Platforms are solid from below, so go around them. Dash dodges hits.</p>
-<p class="go">TAP TO BEGIN</p></div>
+<div id="ov"><section class="menuCard"><div class="sig">A game of the forgotten heights</div><h1>ASHENVEIL</h1><div class="tagline">The Hollow Ascent</div><div class="rule"></div>
+<p id="t1">The tower is listening. Something above has begun to answer.</p>
+<p id="t2">Climb through a shifting ruin, meet the things that haunt its ledges, and discover what waits beyond the ash.</p>
+<div class="menuActions"><button class="menuBtn" id="startBtn">Begin the climb</button><button class="menuBtn secondary" id="loreBtn">The tower’s secret</button><button class="menuBtn secondary" id="controlsBtn">How to play</button><button class="menuBtn secondary" id="optionsBtn">Options</button></div>
+<div class="menuFoot">A shifting tower • every ascent is different</div><div class="go" id="menuHint">ENTER / TAP TO BEGIN</div></section></div>
 <script>
 // ---------- tuning ----------
 const T={run:215,accG:7000,accA:3400,grav:1750,jump:705,cut:.3,dash:720,dashT:.14,fall:900,slide:50,wjx:300,wjy:705,coyote:.12,buffer:.13,wallCoyote:.12,lock:.12};
@@ -55,7 +71,7 @@ zl.addEventListener('pointermove',e=>{if(e.pointerId===sid)mv(e)});
 const sEnd=e=>{if(e.pointerId!==sid)return;sid=null;K.l=K.r=K.d=K.u=0;sb.style.cssText='';sk.style.transform=''};
 zl.addEventListener('pointerup',sEnd);zl.addEventListener('pointercancel',sEnd);bind('bj',v=>{K.j=v;if(v)jBuf=T.buffer});bind('bd',v=>{if(v)dBuf=T.buffer});bind('ba',v=>{if(v)aBuf=T.buffer});
 const km={ArrowLeft:'l',KeyA:'l',ArrowRight:'r',KeyD:'r',Space:'j',ArrowUp:'j',KeyZ:'j',KeyW:'j',ArrowDown:'d',KeyS:'d'};
-addEventListener('keydown',e=>{if(e.repeat)return;const k=km[e.code];if(k){K[k]=1;if(k=='j')jBuf=T.buffer}if(e.code=='ArrowUp'||e.code=='KeyW')K.u=1;if(e.code=='KeyX'||e.code=='ShiftLeft')dBuf=T.buffer;if(e.code=='KeyC'||e.code=='KeyK'||e.code=='KeyJ')aBuf=T.buffer;if(state!='play')begin()});
+addEventListener('keydown',e=>{if(e.repeat)return;const k=km[e.code];if(k){K[k]=1;if(k=='j')jBuf=T.buffer}if(e.code=='ArrowUp'||e.code=='KeyW')K.u=1;if(e.code=='KeyX'||e.code=='ShiftLeft')dBuf=T.buffer;if(e.code=='KeyC'||e.code=='KeyK'||e.code=='KeyJ')aBuf=T.buffer;if((e.code==='Enter'||e.code==='Space')&&state!=='play')begin()});
 addEventListener('keyup',e=>{const k=km[e.code];if(k)K[k]=0;if(e.code=='ArrowUp'||e.code=='KeyW')K.u=0});
 // ---------- state ----------
 let P,plats,cam,last,parts,ghosts,fog,state='menu',best=0,bestPx=0,maxH=0,shake=0,time=0,deadAt=0;
@@ -99,13 +115,25 @@ function hurt(){const x0=P.x+3,x1=P.x+P.w-3,y0=P.y+5,y1=P.y+P.h-1;
  return false}
 function burst(x,y,n,c,sp,up){for(let i=0;i<n;i++){const a=Math.random()*6.28,s=Math.random()*sp;parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-(up||0),l:.4+Math.random()*.5,m:.9,c})}}
 function begin(){audioInit();if(AC&&AC.state=='suspended')AC.resume();if(state=='play')return;if(state=='dead'&&performance.now()-deadAt<700)return;reset();state='play';document.getElementById('ov').style.opacity=0;document.getElementById('ov').style.pointerEvents='none'}
-document.getElementById('ov').addEventListener('pointerdown',begin);
+const ov=document.getElementById('ov');
+function setPage(title,body,button='Return to the tower'){
+ document.getElementById('t1').textContent=title;document.getElementById('t2').textContent=body;
+ document.getElementById('startBtn').textContent=button;
+ document.getElementById('startBtn').onclick=()=>{if(state==='dead')state='menu';begin()};
+ document.getElementById('menuHint').textContent='ASHENVEIL • THE HOLLOW ASCENT';
+}
+document.getElementById('startBtn').onclick=begin;
+document.getElementById('loreBtn').onclick=()=>setPage('Something beneath the stone is climbing too.','The oldest carvings show no king, no god—only a figure sealed above the clouds. Lately, the tower has started opening doors in its sleep. You hear a second set of footsteps whenever you stop.');
+document.getElementById('controlsBtn').onclick=()=>setPage('Move with intention. Strike to survive.','PC: A / D or ← / → move • Space / W / ↑ jump • J / C / K strike • X / Shift dash • S / ↓ for an aerial downward strike. Touch: left side moves; use the three action buttons on the right.');
+document.getElementById('optionsBtn').onclick=()=>{muted=!muted;document.getElementById('mu').innerHTML=muted?'&#128263;':'&#128266;';if(mg)mg.gain.value=muted?0:.55;setPage('Sound '+(muted?'muted':'restored')+'.','The tower answers in a low, shifting score. Tap the speaker in the corner or choose Options to change sound. This setting is kept for this session.','Continue')};
+ov.addEventListener('pointerdown',e=>{if(e.target===ov)begin()});
 function die(){
  state='dead';deadAt=performance.now();sfx('hurt');shake=8;burst(P.x+9,P.y+14,40,'255,190,100',220,60);
  const nb=maxH>best;if(nb){best=Math.floor(maxH);try{localStorage.setItem('es_best',best)}catch(e){}}
  const o=document.getElementById('ov');o.style.opacity=1;o.style.pointerEvents='auto';
  document.getElementById('t1').textContent='Your light went out at '+Math.floor(maxH)+' m';
  document.getElementById('t2').textContent=(nb?'A new record. ':'')+'Best: '+best+' m. Your ember will mark it on the wall.';
+ document.getElementById('startBtn').textContent='Climb again';document.getElementById('startBtn').onclick=()=>{state='menu';begin()};
 }
 // ---------- simulation ----------
 function step(dt){
