@@ -116,10 +116,16 @@ function hurt(){const x0=P.x+3,x1=P.x+P.w-3,y0=P.y+5,y1=P.y+P.h-1;
 function burst(x,y,n,c,sp,up){for(let i=0;i<n;i++){const a=Math.random()*6.28,s=Math.random()*sp;parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-(up||0),l:.4+Math.random()*.5,m:.9,c})}}
 function begin(){audioInit();if(AC&&AC.state=='suspended')AC.resume();if(state=='play')return;if(state=='dead'&&performance.now()-deadAt<700)return;reset();state='play';document.getElementById('ov').style.opacity=0;document.getElementById('ov').style.pointerEvents='none'}
 const ov=document.getElementById('ov');
-function setPage(title,body,button='Return to the tower'){
+function showHome(){
+ document.getElementById('t1').textContent='The tower is listening. Something above has begun to answer.';
+ document.getElementById('t2').textContent='Climb through a shifting ruin, meet the things that haunt its ledges, and discover what waits beyond the ash.';
+ document.getElementById('startBtn').textContent='Begin the climb';document.getElementById('startBtn').onclick=begin;
+ document.getElementById('menuHint').textContent='ENTER / TAP TO BEGIN';
+}
+function setPage(title,body,button='Back'){
  document.getElementById('t1').textContent=title;document.getElementById('t2').textContent=body;
  document.getElementById('startBtn').textContent=button;
- document.getElementById('startBtn').onclick=()=>{if(state==='dead')state='menu';begin()};
+ document.getElementById('startBtn').onclick=showHome;
  document.getElementById('menuHint').textContent='ASHENVEIL • THE HOLLOW ASCENT';
 }
 document.getElementById('startBtn').onclick=begin;
