@@ -30,7 +30,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
 .tagline{font:11px Georgia;letter-spacing:4px;color:#c3b9d3;margin:12px 0 22px;text-transform:uppercase}
 .rule{width:100%;height:1px;background:linear-gradient(90deg,transparent,#c59b65aa,transparent);margin:16px 0}
 #t1{font:italic 15px Georgia;color:#e6d8c4;line-height:1.7;margin:12px auto 20px;max-width:310px}
-#t2{font:12px Georgia;color:#b9b6c1;line-height:1.8;margin:0 auto;max-width:330px;min-height:52px}
+#t2{font:12px Georgia;color:#b9b6c1;line-height:1.8;margin:0 auto;max-width:330px;min-height:52px;max-height:30vh;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y}
 .menuActions{display:grid;gap:9px;margin-top:22px}
 .menuBtn{height:43px;border:1px solid #b58e61;background:linear-gradient(90deg,#8e593b,#bd8953,#8e593b);color:#fff0d1;font:12px Georgia;letter-spacing:3px;text-transform:uppercase;cursor:pointer}
 .menuBtn.secondary{background:rgba(243,220,176,.035);border-color:#c4b7a244;color:#d4c9b5}
@@ -49,7 +49,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
  .tagline{margin:3px 0 8px;font-size:8px}
  .rule{margin:6px 0}
  #t1{font-size:12px;line-height:1.25;margin:4px auto 6px}
- #t2{font-size:10px;line-height:1.3;min-height:0}
+ #t2{font-size:10px;line-height:1.3;min-height:0;max-height:26vh}
  .menuActions{grid-template-columns:1fr 1fr;gap:5px;margin-top:8px}
  .menuBtn{height:31px;font-size:9px;letter-spacing:1.5px}
  .menuFoot{margin-top:6px;font-size:7px}
@@ -92,6 +92,7 @@ addEventListener('keyup',e=>{const k=km[e.code];if(k)K[k]=0;if(e.code=='ArrowUp'
 // ---------- state ----------
 let P,plats,cam,last,parts,ghosts,fog,state='menu',best=0,bestPx=0,maxH=0,shake=0,time=0,deadAt=0;
 try{best=+localStorage.getItem('es_best')||0}catch(e){}
+let loreSeen=[];try{const savedLore=JSON.parse(localStorage.getItem('es_whispers')||'[]');if(Array.isArray(savedLore))loreSeen=savedLore.filter(i=>Number.isInteger(i)&&i>=0&&i<6)}catch(e){}
 const stars=[...Array(70)].map(()=>({x:Math.random()*1000,y:Math.random()*1200,r:Math.random()*1.2+.3,p:Math.random()*6}));
 const pillars=[...Array(7)].map((_,i)=>({x:i*62-10+Math.random()*20,w:20+Math.random()*26,f:.25+Math.random()*.2}));
 const bnd=y=>{const h=-y,c=180+130*Math.sin(h*.003)+30*Math.sin(h*.0075+1.3),w=240+30*Math.sin(h*.004+2);return[c-w,c+w]};
@@ -141,7 +142,11 @@ function resumeGame(){
 const menuOverlay=document.getElementById('ov');
 function bindLore(){
  const b=document.getElementById('loreBtn');b.textContent='The tower’s secret';
- b.onclick=()=>setPage('Something beneath the stone is climbing too.','The oldest carvings show no king, no god—only a figure sealed above the clouds. Lately, the tower has started opening doors in its sleep. You hear a second set of footsteps whenever you stop.');
+ b.onclick=()=>{
+  const found=STORY_BEATS.filter((_,i)=>loreSeen.includes(i));
+  const body=found.length?found.map(x=>x.title+' — '+x.body).join(' • '):'No echoes remembered yet. Climb higher, and listen when the tower answers.';
+  setPage(found.length?'Echoes remembered · '+found.length+' / '+STORY_BEATS.length:'The tower keeps its secrets',body,'Back');
+ };
 }
 function showHome(){
  document.querySelector('.menuCard h1').textContent='ASHENVEIL';
@@ -226,7 +231,11 @@ function step(dt){
  P.sx+=(1-P.sx)*Math.min(1,dt*14);P.sy+=(1-P.sy)*Math.min(1,dt*14);
  P.swing+=((-P.vx*.0016)-P.swing)*Math.min(1,dt*8);
  maxH=Math.max(maxH,-(P.y+P.h)/10);
- if(storyBeat<STORY_BEATS.length&&maxH>=STORY_BEATS[storyBeat].at){bnr(STORY_BEATS[storyBeat].text);storyBeat++;sfx('bell')}
+ if(storyBeat<STORY_BEATS.length&&maxH>=STORY_BEATS[storyBeat].at){
+  const ix=storyBeat,beat=STORY_BEATS[ix];bnr(beat.banner);storyBeat++;
+  if(!loreSeen.includes(ix)){loreSeen.push(ix);try{localStorage.setItem('es_whispers',JSON.stringify(loreSeen))}catch(e){}}
+  sfx('bell');
+ }
  // camera
  clampX();
  let tx=P.x+9-W/2+P.face*28,ty=P.y-Hv*.55,kx=3.5,ky=P.vy>300?9:6;
@@ -426,12 +435,12 @@ const ED={wisp:{w:16,h:16,hp:2,c:1},crawler:{w:22,h:14,hp:3,c:2},archer:{w:16,h:
 function ov(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
 function doorMk(y){const b=bnd(y),o={x:b[0]-40,y,w:b[1]-b[0]+80,h:14,s:.5,z:0,door:1,ceil:false};o.img=platSprite(o);plats.push(o);return o}
 const STORY_BEATS=[
- {at:240,text:'A FOOTSTEP ANSWERS YOURS.'},
- {at:760,text:'NOT FROM BELOW. FROM ABOVE.'},
- {at:1540,text:'THE STONE IS ONLY A SKIN.'},
- {at:2700,text:'THEY CALLED IT THE GUEST.'},
- {at:4200,text:'IT REMEMBERS YOUR SHAPE.'},
- {at:5900,text:'SOMEWHERE ABOVE, A DOOR OPENS.'}
+ {at:240,banner:'A FOOTSTEP ANSWERS YOURS.',title:'The echo',body:'Your footfall returns in perfect rhythm. The answering step lands a breath after yours.'},
+ {at:760,banner:'NOT FROM BELOW. FROM ABOVE.',title:'Above you',body:'The sound falls from the climb ahead. Whatever follows is already higher than you are.'},
+ {at:1540,banner:'THE STONE IS ONLY A SKIN.',title:'A living wall',body:'A warm pulse moves beneath the stone. Then the masonry turns cold beneath your hand.'},
+ {at:2700,banner:'THEY CALLED IT THE GUEST.',title:'A name in ash',body:'A scratched word survives the soot: GUEST. It has been waiting somewhere inside the tower.'},
+ {at:4200,banner:'IT REMEMBERS YOUR SHAPE.',title:'The borrowed shadow',body:'For one heartbeat, a shadow on the next ledge wears your outline.'},
+ {at:5900,banner:'SOMEWHERE ABOVE, A DOOR OPENS.',title:'A door unlatched',body:'A door opens far above. You hear the same footsteps cross its threshold.'}
 ];
 function bnr(t){bn=t;bnT=2}
 function hurtP(n,dx){if(P.inv>0||P.dash>0||state!='play')return;sfx('hurt');P.hp-=n;P.inv=1.1;P.vx=dx*230;P.vy=-300;P.lock=.15;hs=.07;shake=9;burst(P.x+9,P.y+14,16,'255,120,90',200,0);if(P.hp<=0)die()}
