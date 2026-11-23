@@ -138,12 +138,12 @@ function hurt(){const x0=P.x+3,x1=P.x+P.w-3,y0=P.y+5,y1=P.y+P.h-1;
  return false}
 function burst(x,y,n,c,sp,up){for(let i=0;i<n;i++){const a=Math.random()*6.28,s=Math.random()*sp;parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-(up||0),l:.4+Math.random()*.5,m:.9,c})}}
 function teach(text,seconds=0){const el=document.getElementById('lesson');el.textContent=text;el.classList.add('show');lessonTimer=seconds}
-function begin(){audioInit();if(AC&&AC.state=='suspended')AC.resume();if(state=='play')return;if(state=='dead'&&performance.now()-deadAt<700)return;reset();lessonStep=0;teach('Move along the ledges • A / D or ← / →',0);state='play';if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();document.getElementById('pauseBtn').style.display='flex';document.getElementById('ov').style.opacity=0;document.getElementById('ov').style.pointerEvents='none'}
+function begin(){audioInit();if(AC&&AC.state=='suspended')AC.resume();if(state=='play')return;if(state=='dead'&&performance.now()-deadAt<700)return;reset();lessonStep=0;teach('Move along the ledges • A / D or ← / →',0);state='play';document.getElementById('startBtn').disabled=true;if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();document.getElementById('pauseBtn').style.display='flex';document.getElementById('ov').style.opacity=0;document.getElementById('ov').style.pointerEvents='none'}
 function pauseGame(){
  if(state!=='play')return;state='paused';menuOverlay.style.opacity=1;menuOverlay.style.pointerEvents='auto';showPause();
 }
 function resumeGame(){
- if(state!=='paused')return;state='play';document.querySelector('.menuCard h1').textContent='ASHENVEIL';menuOverlay.style.opacity=0;menuOverlay.style.pointerEvents='none';
+ if(state!=='paused')return;state='play';document.getElementById('startBtn').disabled=true;document.querySelector('.menuCard h1').textContent='ASHENVEIL';menuOverlay.style.opacity=0;menuOverlay.style.pointerEvents='none';
  document.getElementById('pauseBtn').style.display='flex';bindLore();bindControls();bindOptions();
 }
 const menuOverlay=document.getElementById('ov');
@@ -181,14 +181,14 @@ function showOptions(){
  updateOptionsPage();
 }
 function showHome(){
- document.querySelector('.menuCard h1').textContent='ASHENVEIL';
+ document.getElementById('startBtn').disabled=false;document.querySelector('.menuCard h1').textContent='ASHENVEIL';
  document.getElementById('t1').textContent='The tower is listening. Something above has begun to answer.';
  document.getElementById('t2').textContent='Climb through a shifting ruin, meet the things that haunt its ledges, and discover what waits beyond the ash.';
  document.getElementById('startBtn').textContent='Begin the climb';document.getElementById('startBtn').onclick=begin;
  document.getElementById('menuHint').textContent='ENTER / TAP TO BEGIN';bindLore();bindControls();bindOptions();
 }
 function showPause(){
- document.querySelector('.menuCard h1').textContent='PAUSED';bindControls();bindOptions();
+ document.getElementById('startBtn').disabled=false;document.querySelector('.menuCard h1').textContent='PAUSED';bindControls();bindOptions();
  document.getElementById('t1').textContent='The climb can wait.';
  document.getElementById('t2').textContent='Catch your breath. The tower is still moving above you.';
  document.getElementById('startBtn').textContent='Resume climb';document.getElementById('startBtn').onclick=resumeGame;
@@ -206,7 +206,7 @@ bindLore();
 bindControls();bindOptions();
 menuOverlay.addEventListener('pointerdown',e=>{if(e.target===menuOverlay)begin()});
 function die(){
- state='dead';deadAt=performance.now();sfx('hurt');shake=8;burst(P.x+9,P.y+14,40,'255,190,100',220,60);
+ state='dead';document.getElementById('startBtn').disabled=false;deadAt=performance.now();sfx('hurt');shake=8;burst(P.x+9,P.y+14,40,'255,190,100',220,60);
  const nb=maxH>best;if(nb){best=Math.floor(maxH);try{localStorage.setItem('es_best',best)}catch(e){}}
  const o=document.getElementById('ov');o.style.opacity=1;o.style.pointerEvents='auto';
  document.getElementById('t1').textContent='Your light went out at '+Math.floor(maxH)+' m';
