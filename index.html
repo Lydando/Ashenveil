@@ -82,7 +82,7 @@ function bind(id,fn){const e=document.getElementById(id);const f=v=>ev=>{ev.prev
 const zl=document.getElementById('zl'),sb=document.getElementById('sb'),sk=document.getElementById('sk');let sid=null,ax=0,ay=0;
 function sbPlace(){sb.style.left=ax-55+'px';sb.style.top=ay-55+'px';sb.style.bottom='auto'}
 function mv(e){let dx=e.clientX-ax,dy=e.clientY-ay;const d=Math.hypot(dx,dy),m=42;if(d>m){dx*=m/d;dy*=m/d}sk.style.transform=`translate(${dx}px,${dy}px)`;K.l=dx<-12?1:0;K.r=dx>12?1:0;K.d=dy>24?1:0;K.u=dy<-24?1:0}
-zl.addEventListener('pointerdown',e=>{if(sid!==null)return;e.preventDefault();sid=e.pointerId;try{zl.setPointerCapture(sid)}catch(_){}const r=sb.getBoundingClientRect();ax=r.left+r.width/2;ay=r.top+r.height/2;sb.style.opacity=1;mv(e)});
+zl.addEventListener('pointerdown',e=>{if(sid!==null)return;e.preventDefault();sid=e.pointerId;try{zl.setPointerCapture(sid)}catch(_){}ax=e.clientX;ay=e.clientY;sbPlace();sb.style.opacity=1;mv(e)});
 zl.addEventListener('pointermove',e=>{if(e.pointerId===sid)mv(e)});
 const sEnd=e=>{if(e.pointerId!==sid)return;sid=null;K.l=K.r=K.d=K.u=0;sb.style.cssText='';sk.style.transform=''};
 zl.addEventListener('pointerup',sEnd);zl.addEventListener('pointercancel',sEnd);bind('bj',v=>{K.j=v;if(v)jBuf=T.buffer});bind('bd',v=>{if(v)dBuf=T.buffer});bind('ba',v=>{if(v)aBuf=T.buffer});
